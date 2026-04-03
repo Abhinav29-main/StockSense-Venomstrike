@@ -89,14 +89,3 @@ Ankit Rishiraaj
 ⚠️ Note
 First search takes ~20 seconds (FinBERT loads once). No API keys needed.
 
-For educational purposes only. Not financial advice.
-
-text
-
----
-
-## ✅ **This is clean, numbered, and easy to follow.**
-
-Copy and paste to GitHub → Commit → Done! 🚀
-This response is AI-generated, for reference only.
-
