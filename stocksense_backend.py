@@ -1,3 +1,8 @@
+import sys
+
+if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+    print("❌ ERROR: Python 3.13 not supported. Use Python 3.11 or 3.12")
+    sys.exit(1)
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import yfinance as yf
