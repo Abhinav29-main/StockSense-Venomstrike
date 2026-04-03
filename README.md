@@ -24,6 +24,14 @@ pip install -r requirements.txt
 2. Start the backend
 bash
 python run_stocksense.py
+
+# ⚠️ IMPORTANT: Python 3.11 or 3.12 REQUIRED
+
+**Python 3.13 will NOT work.** The program will show an error and exit.
+
+Download Python 3.11 here: https://www.python.org/downloads/release/python-31111/
+
+---
 Wait for: FinBERT ready. then Running on http://localhost:5050
 
 3. Open the frontend
