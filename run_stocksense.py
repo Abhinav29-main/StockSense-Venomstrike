@@ -1,3 +1,15 @@
+import sys
+
+# Check Python version
+if sys.version_info.major == 3 and sys.version_info.minor >= 13:
+    print("=" * 60)
+    print("❌ ERROR: Python 3.13 is not supported yet!")
+    print("=" * 60)
+    print("Please install Python 3.11 or 3.12:")
+    print("https://www.python.org/downloads/release/python-31111/")
+    print("=" * 60)
+    input("Press Enter to exit...")
+    sys.exit(1)
 import subprocess, sys, os, time, webbrowser, importlib
 
 PACKAGES = ["flask", "flask_cors", "yfinance", "transformers", "torch", "sklearn", "numpy", "pandas", "feedparser", "requests"]
