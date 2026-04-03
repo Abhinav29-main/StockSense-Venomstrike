@@ -21,7 +21,11 @@
 
 ```bash
 pip install -r requirements.txt
-2. Start the backend
+2. Install yfinance or update it
+pip install yfinance
+(or)
+pip install --upgrade yfinance
+
 bash
 python run_stocksense.py
 
