@@ -30,45 +30,29 @@ Wait for: FinBERT ready. then Running on http://localhost:5050
 Double-click stocksense_frontend.html OR open it in your browser
 
 🧪 Testing
-✅ Test 1: Backend running
+Test 1: Backend running
 Open browser → Go to http://localhost:5050/api/health
 
 Expected: {"status":"ok","finbert":"loaded"}
 
-✅ Test 2: Analyze a stock
+Test 2: Analyze a stock
 Go to http://localhost:5050/api/analyze/AAPL
 
 Expected: JSON with ml_forecast.signal (BUY/SELL/HOLD)
 
-✅ Test 3: OpenClaw + ArmorIQ
+Test 3: OpenClaw + ArmorIQ
 Go to http://localhost:5050/api/openclaw/NVDA
 
 Expected: "armoriq": {"verified": true}
 
-✅ Test 4: Frontend UI
-Type AAPL in search bar
+Test 4: Frontend UI
+Type AAPL in search bar → Click Analyze → See ML signal + news sentiment
 
-Click Analyze
+Test 5: OpenClaw Agent Panel
+Scroll to "🦞 OpenClaw Agent Interface" → Type Analyze AAPL → Click Send to Agent → ArmorIQ shows verified ✓
 
-See: ML signal + news sentiment + technicals
-
-✅ Test 5: OpenClaw Agent Panel
-Scroll to "🦞 OpenClaw Agent Interface"
-
-Type Analyze AAPL
-
-Click Send to Agent
-
-ArmorIQ shows ✅ verified with intent token
-
-✅ Test 6: Portfolio Tracker
-Scroll to Portfolio Tracker
-
-Add: Ticker MSFT, Shares 1, Buy Price 10
-
-Click Add Position
-
-P&L calculates automatically
+Test 6: Portfolio Tracker
+Add position (MSFT, 1 share, $10) → P&L calculates automatically
 
 📁 Project Files
 File	What it does
@@ -88,4 +72,3 @@ Ankit Rishiraaj
 
 ⚠️ Note
 First search takes ~20 seconds (FinBERT loads once). No API keys needed.
-
