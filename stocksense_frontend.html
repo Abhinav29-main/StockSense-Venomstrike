@@ -1,133 +1,1023 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>StockSense — AI-Powered Market Intelligence</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
-      --gold: #D4A017; --gold-light: #F0C040; --teal: #1A5C52; --teal-bright: #22897A;
-      --dark: #1A1A1A; --dark2: #222222; --dark3: #2A2A2A; --card: #1E2D2A;
-      --text: #E8E0C8; --text-dim: #9A8E72; --border: rgba(212,160,23,.25);
-      --up: #22C55E; --down: #EF4444; --neutral: #FACC15;
+      --gold: #D4A017;
+      --gold-light: #F0C040;
+      --teal: #1A5C52;
+      --teal-bright: #22897A;
+      --dark: #1A1A1A;
+      --dark2: #222222;
+      --dark3: #2A2A2A;
+      --card: #1E2D2A;
+      --text: #E8E0C8;
+      --text-dim: #9A8E72;
+      --border: rgba(212, 160, 23, .25);
+      --up: #22C55E;
+      --down: #EF4444;
+      --neutral: #FACC15;
     }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
-    body { font-family:'IBM Plex Sans',sans-serif; background:var(--dark); color:var(--text); min-height:100vh; overflow-x:hidden; }
-    body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events:none; z-index:9999; opacity:.4; }
-    nav { position:fixed; top:0; left:0; right:0; z-index:1000; display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:60px; background:rgba(26,26,26,.92); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
-    .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.3rem; color:var(--gold-light); letter-spacing:.05em; }
-    .nav-logo span { color:var(--teal-bright); }
-    .nav-links { display:flex; gap:1.5rem; align-items:center; }
-    .nav-links a { font-size:.8rem; text-decoration:none; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; letter-spacing:.08em; text-transform:uppercase; transition:color .2s; }
-    .nav-links a:hover { color:var(--gold-light); }
-    .nav-badge { font-size:.65rem; background:var(--teal); color:var(--gold-light); padding:.2rem .6rem; border-radius:2px; font-family:'IBM Plex Mono',monospace; border:1px solid var(--gold); }
-    .hero { padding:120px 2rem 60px; max-width:1400px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center; }
-    .hero-tag { font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--gold); letter-spacing:.15em; text-transform:uppercase; margin-bottom:1rem; display:flex; align-items:center; gap:.5rem; }
-    .hero-tag::before { content:''; width:2rem; height:1px; background:var(--gold); }
-    h1 { font-family:'Syne',sans-serif; font-weight:800; font-size:clamp(2.2rem,4vw,3.5rem); line-height:1.05; color:var(--text); margin-bottom:1rem; }
-    h1 em { color:var(--gold-light); font-style:normal; }
-    .hero-sub { color:var(--text-dim); font-size:.95rem; line-height:1.7; max-width:460px; margin-bottom:2rem; }
-    .hero-stats { display:flex; gap:2rem; margin-bottom:2rem; }
-    .stat-box { padding:.8rem 1.2rem; border:1px solid var(--border); background:var(--card); border-radius:4px; }
-    .stat-num { font-family:'Syne',sans-serif; font-weight:700; font-size:1.4rem; color:var(--gold-light); }
-    .stat-label { font-size:.72rem; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; }
-    .btn-primary { display:inline-flex; align-items:center; gap:.5rem; background:var(--gold); color:var(--dark); font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; padding:.75rem 1.8rem; border-radius:3px; border:none; cursor:pointer; text-decoration:none; transition:background .2s,transform .15s; letter-spacing:.04em; }
-    .btn-primary:hover { background:var(--gold-light); transform:translateY(-1px); }
-    .btn-secondary { display:inline-flex; align-items:center; gap:.5rem; background:transparent; color:var(--gold); font-family:'Syne',sans-serif; font-weight:600; font-size:.9rem; padding:.75rem 1.8rem; border-radius:3px; border:1px solid var(--gold); cursor:pointer; text-decoration:none; transition:all .2s; letter-spacing:.04em; margin-left:1rem; }
-    .btn-secondary:hover { background:rgba(212,160,23,.1); }
-    section { padding:4rem 2rem; max-width:1400px; margin:0 auto; }
-    .section-tag { font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:var(--gold); letter-spacing:.15em; text-transform:uppercase; margin-bottom:.5rem; }
-    .section-title { font-family:'Syne',sans-serif; font-weight:700; font-size:clamp(1.5rem,3vw,2.2rem); margin-bottom:.5rem; color:var(--text); }
-    .gold-line { width:3rem; height:3px; background:var(--gold); margin-bottom:1.5rem; border-radius:2px; }
-    .search-wrap { display:flex; gap:0; max-width:700px; border:1px solid var(--border); border-radius:4px; overflow:hidden; background:var(--dark2); margin-bottom:2rem; }
-    .search-wrap input { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:.9rem; padding:.75rem 1rem; }
-    .search-wrap input::placeholder { color:var(--text-dim); }
-    .search-wrap button { background:var(--gold); color:var(--dark); font-family:'Syne',sans-serif; font-weight:700; font-size:.85rem; padding:.75rem 1.5rem; border:none; cursor:pointer; transition:background .2s; letter-spacing:.04em; }
-    .search-wrap button:hover { background:var(--gold-light); }
-    .chart-area { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:1.5rem; margin-top:2rem; }
-    .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem; }
-    .chart-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; }
-    .chart-subtitle { font-size:.78rem; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; }
-    .indicators { display:flex; flex-wrap:wrap; gap:1rem; margin-top:1.5rem; padding-top:1.2rem; border-top:1px solid rgba(255,255,255,.06); }
-    .ind-box { flex:1; min-width:120px; padding:.8rem; background:var(--dark2); border:1px solid var(--border); border-radius:4px; }
-    .ind-label { font-family:'IBM Plex Mono',monospace; font-size:.65rem; color:var(--text-dim); letter-spacing:.08em; text-transform:uppercase; }
-    .ind-val { font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-top:.3rem; }
-    .ind-interp { font-size:.68rem; font-family:'IBM Plex Mono',monospace; margin-top:.15rem; }
-    .green { color:var(--up); } .red { color:var(--down); } .yellow { color:var(--neutral); }
-    .sent-section { display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:2rem; }
-    .sent-card { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:1.5rem; }
-    .sent-card h3 { font-family:'Syne',sans-serif; font-weight:600; font-size:1rem; color:var(--gold-light); margin-bottom:1rem; }
-    .news-item { padding:.8rem 0; border-bottom:1px solid rgba(255,255,255,.06); display:flex; gap:.8rem; align-items:flex-start; }
-    .news-item:last-child { border-bottom:none; }
-    .news-badge { font-family:'IBM Plex Mono',monospace; font-size:.62rem; padding:.15rem .4rem; border-radius:2px; white-space:nowrap; margin-top:.15rem; }
-    .nb-pos { background:rgba(34,197,94,.15); color:#86EFAC; border:1px solid rgba(34,197,94,.3); }
-    .nb-neg { background:rgba(239,68,68,.15); color:#FCA5A5; border:1px solid rgba(239,68,68,.3); }
-    .nb-neu { background:rgba(250,204,21,.1); color:#FDE68A; border:1px solid rgba(250,204,21,.2); }
-    .news-text { font-size:.8rem; color:var(--text); line-height:1.5; }
-    .news-source { font-size:.68rem; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; margin-top:.2rem; }
-    .pred-section { margin-top:2rem; }
-    .pred-card { background:linear-gradient(135deg,rgba(26,92,82,.4),rgba(26,26,26,.8)); border:1px solid var(--border); border-radius:6px; padding:1.5rem; display:flex; gap:2rem; align-items:center; flex-wrap:wrap; }
-    .pred-icon { font-size:2.5rem; }
-    .pred-info { flex:1; }
-    .pred-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; color:var(--gold-light); margin-bottom:.3rem; }
-    .pred-desc { font-size:.82rem; color:var(--text-dim); line-height:1.6; }
-    .pred-conf { font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:var(--text-dim); margin-top:.5rem; }
-    .conf-bar { height:6px; background:rgba(255,255,255,.1); border-radius:3px; margin-top:.3rem; overflow:hidden; width:200px; }
-    .conf-fill { height:100%; background:linear-gradient(90deg,var(--teal-bright),var(--gold)); border-radius:3px; transition:width .8s; }
-    .ml-details { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.5rem; padding-top:1.2rem; border-top:1px solid rgba(255,255,255,.06); }
-    .ml-box { padding:.8rem; background:var(--dark2); border:1px solid var(--border); border-radius:4px; }
-    .ml-label { font-family:'IBM Plex Mono',monospace; font-size:.6rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.08em; }
-    .ml-val { font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; margin-top:.25rem; }
-    .portfolio-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.2rem; margin-top:1rem; }
-    .pf-card { background:var(--card); border:1px solid var(--border); border-radius:6px; padding:1.2rem; }
-    .pf-label { font-family:'IBM Plex Mono',monospace; font-size:.68rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:.1em; }
-    .pf-value { font-family:'Syne',sans-serif; font-weight:700; font-size:1.5rem; color:var(--text); margin-top:.3rem; }
-    .watch-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-    .watch-table thead th { font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-dim); padding:.6rem 1rem; border-bottom:1px solid var(--border); text-align:left; }
-    .watch-table tbody tr { border-bottom:1px solid rgba(255,255,255,.04); transition:background .15s; cursor:pointer; }
-    .watch-table tbody tr:hover { background:rgba(26,92,82,.2); }
-    .watch-table td { padding:.75rem 1rem; color:var(--text); }
-    .watch-table td:first-child { font-family:'Syne',sans-serif; font-weight:600; color:var(--gold-light); }
-    .sc-signal { font-family:'IBM Plex Mono',monospace; font-size:.65rem; padding:.2rem .5rem; border-radius:2px; font-weight:500; }
-    .sig-buy { background:rgba(34,197,94,.15); color:#86EFAC; border:1px solid rgba(34,197,94,.3); }
-    .sig-sell { background:rgba(239,68,68,.15); color:#FCA5A5; border:1px solid rgba(239,68,68,.3); }
-    .sig-hold { background:rgba(250,204,21,.15); color:#FDE68A; border:1px solid rgba(250,204,21,.3); }
-    .loading-overlay { position:absolute; inset:0; background:rgba(26,26,26,.85); display:flex; align-items:center; justify-content:center; border-radius:6px; z-index:10; flex-direction:column; gap:1rem; }
-    .spinner { width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--gold); border-radius:50%; animation:spin .8s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .loading-text { font-family:'IBM Plex Mono',monospace; font-size:.75rem; color:var(--gold); }
-    #toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:5000; background:var(--teal); border:1px solid var(--gold); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:.8rem; padding:.8rem 1.2rem; border-radius:4px; transform:translateY(100px); opacity:0; transition:all .4s; pointer-events:none; }
-    #toast.show { transform:translateY(0); opacity:1; }
-    #toast.error { background:#7f1d1d; border-color:var(--down); }
-    /* ── OpenClaw / ArmorIQ panel ── */
-    .claw-panel { background:linear-gradient(135deg,rgba(10,30,26,.9),rgba(26,26,26,.95)); border:1px solid rgba(212,160,23,.35); border-radius:8px; padding:1.5rem; margin-top:2rem; }
-    .claw-header { display:flex; align-items:center; gap:.8rem; margin-bottom:1.2rem; flex-wrap:wrap; }
-    .claw-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; color:#F0C040; display:flex; align-items:center; gap:.4rem; }
-    .shield-badge { font-family:'IBM Plex Mono',monospace; font-size:.62rem; background:rgba(239,68,68,.15); color:#FCA5A5; border:1px solid rgba(239,68,68,.4); padding:.2rem .55rem; border-radius:2px; display:flex; align-items:center; gap:.3rem; }
-    .shield-badge.verified { background:rgba(34,197,94,.12); color:#86EFAC; border-color:rgba(34,197,94,.35); }
-    .claw-terminal { background:#0D1117; border:1px solid rgba(212,160,23,.2); border-radius:6px; padding:1rem 1.2rem; font-family:'IBM Plex Mono',monospace; font-size:.78rem; color:#C9D1D9; min-height:80px; margin-bottom:1rem; white-space:pre-wrap; line-height:1.7; }
-    .claw-terminal .prompt { color:var(--gold); }
-    .claw-input-row { display:flex; gap:.6rem; flex-wrap:wrap; }
-    .claw-input { flex:1; min-width:180px; background:#0D1117; border:1px solid rgba(212,160,23,.3); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:.82rem; padding:.6rem .9rem; border-radius:4px; outline:none; }
-    .claw-input:focus { border-color:var(--gold); }
-    .claw-btn { background:var(--gold); color:var(--dark); font-family:'Syne',sans-serif; font-weight:700; font-size:.82rem; padding:.6rem 1.3rem; border:none; border-radius:4px; cursor:pointer; transition:background .2s; white-space:nowrap; }
-    .claw-btn:hover { background:var(--gold-light); }
-    .claw-btn:disabled { opacity:.5; cursor:not-allowed; }
-    .armoriq-log { margin-top:1rem; padding:.8rem 1rem; background:rgba(0,0,0,.4); border-left:3px solid #58a6ff; border-radius:0 4px 4px 0; font-family:'IBM Plex Mono',monospace; font-size:.68rem; color:#8b949e; display:none; }
-    .armoriq-log.show { display:block; }
-    .armoriq-log .log-title { color:#58a6ff; margin-bottom:.4rem; font-weight:500; }
-    .example-cmds { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.8rem; }
-    .ex-cmd { font-family:'IBM Plex Mono',monospace; font-size:.68rem; background:rgba(212,160,23,.08); border:1px solid rgba(212,160,23,.2); color:var(--gold); padding:.25rem .6rem; border-radius:3px; cursor:pointer; transition:background .2s; }
-    .ex-cmd:hover { background:rgba(212,160,23,.18); }
 
-    footer { border-top:1px solid var(--border); padding:2rem; text-align:center; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; font-size:.72rem; background:var(--dark2); }
-    footer strong { color:var(--gold-light); }
-    @media(max-width:900px) { .hero { grid-template-columns:1fr; } .sent-section { grid-template-columns:1fr; } .portfolio-grid { grid-template-columns:1fr 1fr; } .ml-details { grid-template-columns:1fr 1fr; } }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: .4;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 60px;
+      background: rgba(26, 26, 26, .92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: var(--gold-light);
+      letter-spacing: .05em;
+    }
+
+    .nav-logo span {
+      color: var(--teal-bright);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      font-size: .8rem;
+      text-decoration: none;
+      color: var(--text-dim);
+      font-family: 'IBM Plex Mono', monospace;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--gold-light);
+    }
+
+    .nav-badge {
+      font-size: .65rem;
+      background: var(--teal);
+      color: var(--gold-light);
+      padding: .2rem .6rem;
+      border-radius: 2px;
+      font-family: 'IBM Plex Mono', monospace;
+      border: 1px solid var(--gold);
+    }
+
+    .hero {
+      padding: 120px 2rem 60px;
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .hero-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .72rem;
+      color: var(--gold);
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .hero-tag::before {
+      content: '';
+      width: 2rem;
+      height: 1px;
+      background: var(--gold);
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      line-height: 1.05;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    h1 em {
+      color: var(--gold-light);
+      font-style: normal;
+    }
+
+    .hero-sub {
+      color: var(--text-dim);
+      font-size: .95rem;
+      line-height: 1.7;
+      max-width: 460px;
+      margin-bottom: 2rem;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-box {
+      padding: .8rem 1.2rem;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: 4px;
+    }
+
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: var(--gold-light);
+    }
+
+    .stat-label {
+      font-size: .72rem;
+      color: var(--text-dim);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--gold);
+      color: var(--dark);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: .9rem;
+      padding: .75rem 1.8rem;
+      border-radius: 3px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, transform .15s;
+      letter-spacing: .04em;
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-light);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: transparent;
+      color: var(--gold);
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: .9rem;
+      padding: .75rem 1.8rem;
+      border-radius: 3px;
+      border: 1px solid var(--gold);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .2s;
+      letter-spacing: .04em;
+      margin-left: 1rem;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(212, 160, 23, .1);
+    }
+
+    section {
+      padding: 4rem 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .7rem;
+      color: var(--gold);
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      margin-bottom: .5rem;
+      color: var(--text);
+    }
+
+    .gold-line {
+      width: 3rem;
+      height: 3px;
+      background: var(--gold);
+      margin-bottom: 1.5rem;
+      border-radius: 2px;
+    }
+
+    .search-wrap {
+      display: flex;
+      gap: 0;
+      max-width: 700px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--dark2);
+      margin-bottom: 2rem;
+    }
+
+    .search-wrap input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .9rem;
+      padding: .75rem 1rem;
+    }
+
+    .search-wrap input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .search-wrap button {
+      background: var(--gold);
+      color: var(--dark);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: .85rem;
+      padding: .75rem 1.5rem;
+      border: none;
+      cursor: pointer;
+      transition: background .2s;
+      letter-spacing: .04em;
+    }
+
+    .search-wrap button:hover {
+      background: var(--gold-light);
+    }
+
+    .chart-area {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .chart-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .chart-subtitle {
+      font-size: .78rem;
+      color: var(--text-dim);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .indicators {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .ind-box {
+      flex: 1;
+      min-width: 120px;
+      padding: .8rem;
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .ind-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .65rem;
+      color: var(--text-dim);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .ind-val {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-top: .3rem;
+    }
+
+    .ind-interp {
+      font-size: .68rem;
+      font-family: 'IBM Plex Mono', monospace;
+      margin-top: .15rem;
+    }
+
+    .green {
+      color: var(--up);
+    }
+
+    .red {
+      color: var(--down);
+    }
+
+    .yellow {
+      color: var(--neutral);
+    }
+
+    .sent-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .sent-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+    }
+
+    .sent-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--gold-light);
+      margin-bottom: 1rem;
+    }
+
+    .news-item {
+      padding: .8rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .06);
+      display: flex;
+      gap: .8rem;
+      align-items: flex-start;
+    }
+
+    .news-item:last-child {
+      border-bottom: none;
+    }
+
+    .news-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .62rem;
+      padding: .15rem .4rem;
+      border-radius: 2px;
+      white-space: nowrap;
+      margin-top: .15rem;
+    }
+
+    .nb-pos {
+      background: rgba(34, 197, 94, .15);
+      color: #86EFAC;
+      border: 1px solid rgba(34, 197, 94, .3);
+    }
+
+    .nb-neg {
+      background: rgba(239, 68, 68, .15);
+      color: #FCA5A5;
+      border: 1px solid rgba(239, 68, 68, .3);
+    }
+
+    .nb-neu {
+      background: rgba(250, 204, 21, .1);
+      color: #FDE68A;
+      border: 1px solid rgba(250, 204, 21, .2);
+    }
+
+    .news-text {
+      font-size: .8rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .news-source {
+      font-size: .68rem;
+      color: var(--text-dim);
+      font-family: 'IBM Plex Mono', monospace;
+      margin-top: .2rem;
+    }
+
+    /* ── Gemini Insight Cards ── */
+    .insight-block {
+      margin-top: .4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .insight-card {
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      border: 1px solid;
+    }
+
+    .insight-card.long-term {
+      background: linear-gradient(135deg, rgba(26, 92, 82, .28), rgba(26, 26, 26, .6));
+      border-color: rgba(34, 197, 94, .3);
+    }
+
+    .insight-card.short-term {
+      background: linear-gradient(135deg, rgba(212, 160, 23, .12), rgba(26, 26, 26, .6));
+      border-color: rgba(212, 160, 23, .35);
+    }
+
+    .insight-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .62rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: .45rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .insight-card.long-term .insight-label {
+      color: #86EFAC;
+    }
+
+    .insight-card.short-term .insight-label {
+      color: var(--gold);
+    }
+
+    .insight-label::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .insight-text {
+      font-size: .82rem;
+      color: var(--text);
+      line-height: 1.72;
+    }
+
+    .insight-loading {
+      display: flex;
+      flex-direction: column;
+      gap: .7rem;
+      margin-top: .4rem;
+    }
+
+    .shimmer-line {
+      height: 11px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, .06) 25%, rgba(255, 255, 255, .13) 50%, rgba(255, 255, 255, .06) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .shimmer-line.w90 {
+      width: 90%;
+    }
+
+    .shimmer-line.w75 {
+      width: 75%;
+    }
+
+    .shimmer-line.w60 {
+      width: 60%;
+    }
+
+    .insight-error {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .74rem;
+      color: #FCA5A5;
+      padding: .6rem .8rem;
+      background: rgba(239, 68, 68, .08);
+      border: 1px solid rgba(239, 68, 68, .25);
+      border-radius: 4px;
+      margin-top: .4rem;
+    }
+
+    .gemini-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .6rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+      margin-top: .9rem;
+      padding-top: .7rem;
+      border-top: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .pred-section {
+      margin-top: 2rem;
+    }
+
+    .pred-card {
+      background: linear-gradient(135deg, rgba(26, 92, 82, .4), rgba(26, 26, 26, .8));
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pred-icon {
+      font-size: 2.5rem;
+    }
+
+    .pred-info {
+      flex: 1;
+    }
+
+    .pred-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--gold-light);
+      margin-bottom: .3rem;
+    }
+
+    .pred-desc {
+      font-size: .82rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .pred-conf {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .7rem;
+      color: var(--text-dim);
+      margin-top: .5rem;
+    }
+
+    .conf-bar {
+      height: 6px;
+      background: rgba(255, 255, 255, .1);
+      border-radius: 3px;
+      margin-top: .3rem;
+      overflow: hidden;
+      width: 200px;
+    }
+
+    .conf-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal-bright), var(--gold));
+      border-radius: 3px;
+      transition: width .8s;
+    }
+
+    .ml-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid rgba(255, 255, 255, .06);
+    }
+
+    .ml-box {
+      padding: .8rem;
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .ml-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .6rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .ml-val {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-top: .25rem;
+    }
+
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.2rem;
+      margin-top: 1rem;
+    }
+
+    .pf-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.2rem;
+    }
+
+    .pf-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .68rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .pf-value {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--text);
+      margin-top: .3rem;
+    }
+
+    .watch-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .82rem;
+    }
+
+    .watch-table thead th {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: .6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .watch-table tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+      transition: background .15s;
+      cursor: pointer;
+    }
+
+    .watch-table tbody tr:hover {
+      background: rgba(26, 92, 82, .2);
+    }
+
+    .watch-table td {
+      padding: .75rem 1rem;
+      color: var(--text);
+    }
+
+    .watch-table td:first-child {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      color: var(--gold-light);
+    }
+
+    .sc-signal {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .65rem;
+      padding: .2rem .5rem;
+      border-radius: 2px;
+      font-weight: 500;
+    }
+
+    .sig-buy {
+      background: rgba(34, 197, 94, .15);
+      color: #86EFAC;
+      border: 1px solid rgba(34, 197, 94, .3);
+    }
+
+    .sig-sell {
+      background: rgba(239, 68, 68, .15);
+      color: #FCA5A5;
+      border: 1px solid rgba(239, 68, 68, .3);
+    }
+
+    .sig-hold {
+      background: rgba(250, 204, 21, .15);
+      color: #FDE68A;
+      border: 1px solid rgba(250, 204, 21, .3);
+    }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(26, 26, 26, .85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      z-index: 10;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .75rem;
+      color: var(--gold);
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 5000;
+      background: var(--teal);
+      border: 1px solid var(--gold);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .8rem;
+      padding: .8rem 1.2rem;
+      border-radius: 4px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all .4s;
+      pointer-events: none;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    #toast.error {
+      background: #7f1d1d;
+      border-color: var(--down);
+    }
+
+    /* ── OpenClaw / ArmorIQ panel ── */
+    .claw-panel {
+      background: linear-gradient(135deg, rgba(10, 30, 26, .9), rgba(26, 26, 26, .95));
+      border: 1px solid rgba(212, 160, 23, .35);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .claw-header {
+      display: flex;
+      align-items: center;
+      gap: .8rem;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+    }
+
+    .claw-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #F0C040;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .shield-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .62rem;
+      background: rgba(239, 68, 68, .15);
+      color: #FCA5A5;
+      border: 1px solid rgba(239, 68, 68, .4);
+      padding: .2rem .55rem;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      gap: .3rem;
+    }
+
+    .shield-badge.verified {
+      background: rgba(34, 197, 94, .12);
+      color: #86EFAC;
+      border-color: rgba(34, 197, 94, .35);
+    }
+
+    .claw-terminal {
+      background: #0D1117;
+      border: 1px solid rgba(212, 160, 23, .2);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .78rem;
+      color: #C9D1D9;
+      min-height: 80px;
+      margin-bottom: 1rem;
+      white-space: pre-wrap;
+      line-height: 1.7;
+    }
+
+    .claw-terminal .prompt {
+      color: var(--gold);
+    }
+
+    .claw-input-row {
+      display: flex;
+      gap: .6rem;
+      flex-wrap: wrap;
+    }
+
+    .claw-input {
+      flex: 1;
+      min-width: 180px;
+      background: #0D1117;
+      border: 1px solid rgba(212, 160, 23, .3);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .82rem;
+      padding: .6rem .9rem;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    .claw-input:focus {
+      border-color: var(--gold);
+    }
+
+    .claw-btn {
+      background: var(--gold);
+      color: var(--dark);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: .82rem;
+      padding: .6rem 1.3rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+
+    .claw-btn:hover {
+      background: var(--gold-light);
+    }
+
+    .claw-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .armoriq-log {
+      margin-top: 1rem;
+      padding: .8rem 1rem;
+      background: rgba(0, 0, 0, .4);
+      border-left: 3px solid #58a6ff;
+      border-radius: 0 4px 4px 0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .68rem;
+      color: #8b949e;
+      display: none;
+    }
+
+    .armoriq-log.show {
+      display: block;
+    }
+
+    .armoriq-log .log-title {
+      color: #58a6ff;
+      margin-bottom: .4rem;
+      font-weight: 500;
+    }
+
+    .example-cmds {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .8rem;
+    }
+
+    .ex-cmd {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .68rem;
+      background: rgba(212, 160, 23, .08);
+      border: 1px solid rgba(212, 160, 23, .2);
+      color: var(--gold);
+      padding: .25rem .6rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .ex-cmd:hover {
+      background: rgba(212, 160, 23, .18);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: .72rem;
+      background: var(--dark2);
+    }
+
+    footer strong {
+      color: var(--gold-light);
+    }
+
+    @media(max-width:900px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .sent-section {
+        grid-template-columns: 1fr;
+      }
+
+      .portfolio-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .ml-details {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
   <nav>
     <div class="nav-logo">Stock<span>Sense</span></div>
@@ -143,32 +1033,61 @@
     <div>
       <div class="hero-tag">OSSome Hacks · Claw &amp; Shield Track</div>
       <h1>Democratizing <em>Market Intelligence</em> for Every Investor</h1>
-      <p class="hero-sub">StockSense aggregates real-time price feeds, SEC filings, social sentiment, and ML forecasting — giving retail investors the same edge as institutional traders.</p>
+      <p class="hero-sub">StockSense aggregates real-time price feeds, SEC filings, social sentiment, and ML forecasting
+        — giving retail investors the same edge as institutional traders.</p>
       <div class="hero-stats">
-        <div class="stat-box"><div class="stat-num">RF+LR</div><div class="stat-label">ML Models</div></div>
-        <div class="stat-box"><div class="stat-num">FinBERT</div><div class="stat-label">NLP Engine</div></div>
-        <div class="stat-box"><div class="stat-num">&lt;1s</div><div class="stat-label">Alert Latency</div></div>
-        <div class="stat-box"><div class="stat-num" style="color:#79c0ff">🦞+🛡️</div><div class="stat-label">Claw &amp; Shield</div></div>
+        <div class="stat-box">
+          <div class="stat-num">RF+LR</div>
+          <div class="stat-label">ML Models</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">FinBERT</div>
+          <div class="stat-label">NLP Engine</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">&lt;1s</div>
+          <div class="stat-label">Alert Latency</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" style="color:#79c0ff">🦞+🛡️</div>
+          <div class="stat-label">Claw &amp; Shield</div>
+        </div>
       </div>
       <a class="btn-primary" href="#analysis">Open Analysis ↓</a>
       <a class="btn-secondary" href="#analysis">Live Analysis</a>
     </div>
     <div style="text-align:right">
       <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.5rem;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--text-dim);margin-bottom:.8rem;text-transform:uppercase;letter-spacing:.1em;">System Architecture — Claw &amp; Shield</div>
-        <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:.5rem;align-items:center;font-size:.7rem;font-family:'IBM Plex Mono',monospace;margin-bottom:.7rem;">
-          <div style="background:var(--teal);border-radius:4px;padding:.55rem;text-align:center;color:var(--gold-light);">Data Sources<br><small style="color:rgba(255,255,255,.6)">yfinance·RSS·News</small></div>
+        <div
+          style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--text-dim);margin-bottom:.8rem;text-transform:uppercase;letter-spacing:.1em;">
+          System Architecture — Claw &amp; Shield</div>
+        <div
+          style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:.5rem;align-items:center;font-size:.7rem;font-family:'IBM Plex Mono',monospace;margin-bottom:.7rem;">
+          <div
+            style="background:var(--teal);border-radius:4px;padding:.55rem;text-align:center;color:var(--gold-light);">
+            Data Sources<br><small style="color:rgba(255,255,255,.6)">yfinance·RSS·News</small></div>
           <div style="color:var(--gold);font-size:.9rem;">→</div>
-          <div style="background:var(--dark3);border:1px solid var(--border);border-radius:4px;padding:.55rem;text-align:center;color:var(--text);">Python Backend<br><small style="color:var(--text-dim)">RandomForest·FinBERT</small></div>
+          <div
+            style="background:var(--dark3);border:1px solid var(--border);border-radius:4px;padding:.55rem;text-align:center;color:var(--text);">
+            Python Backend<br><small style="color:var(--text-dim)">RandomForest·FinBERT</small></div>
           <div style="color:var(--gold);font-size:.9rem;">→</div>
-          <div style="background:rgba(212,160,23,.15);border:1px solid var(--gold);border-radius:4px;padding:.55rem;text-align:center;color:var(--gold-light);">Signals·Charts<br><small style="color:rgba(212,160,23,.7)">NLP·Portfolio</small></div>
+          <div
+            style="background:rgba(212,160,23,.15);border:1px solid var(--gold);border-radius:4px;padding:.55rem;text-align:center;color:var(--gold-light);">
+            Signals·Charts<br><small style="color:rgba(212,160,23,.7)">NLP·Portfolio</small></div>
         </div>
-        <div style="border-top:1px dashed rgba(212,160,23,.2);padding-top:.7rem;display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;font-size:.7rem;font-family:'IBM Plex Mono',monospace;">
-          <div style="background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.35);border-radius:4px;padding:.55rem;text-align:center;color:#79c0ff;">🦞 OpenClaw Agent<br><small style="color:rgba(88,166,255,.7)">WhatsApp·Discord·Slack</small></div>
+        <div
+          style="border-top:1px dashed rgba(212,160,23,.2);padding-top:.7rem;display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;font-size:.7rem;font-family:'IBM Plex Mono',monospace;">
+          <div
+            style="background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.35);border-radius:4px;padding:.55rem;text-align:center;color:#79c0ff;">
+            🦞 OpenClaw Agent<br><small style="color:rgba(88,166,255,.7)">WhatsApp·Discord·Slack</small></div>
           <div style="color:#58a6ff;font-size:.9rem;">⇄</div>
-          <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:4px;padding:.55rem;text-align:center;color:#FCA5A5;">🛡️ ArmorIQ Shield<br><small style="color:rgba(239,68,68,.6)">Intent·Policy·Crypto</small></div>
+          <div
+            style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:4px;padding:.55rem;text-align:center;color:#FCA5A5;">
+            🛡️ ArmorIQ Shield<br><small style="color:rgba(239,68,68,.6)">Intent·Policy·Crypto</small></div>
         </div>
-        <div style="margin-top:.5rem;font-size:.6rem;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;text-align:center;">OpenClaw calls /api/openclaw/{TICKER} · ArmorIQ verifies intent token before every tool call</div>
+        <div
+          style="margin-top:.5rem;font-size:.6rem;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;text-align:center;">
+          OpenClaw calls /api/openclaw/{TICKER} · ArmorIQ verifies intent token before every tool call</div>
       </div>
     </div>
   </div>
@@ -184,16 +1103,45 @@
 
     <div class="chart-area" id="chartArea" style="position:relative;">
       <div class="chart-header">
-        <div><div class="chart-title" id="chartTitle">Stock Overview</div><div class="chart-subtitle" id="chartSub">Price History · Technical Overlay</div></div>
+        <div>
+          <div class="chart-title" id="chartTitle">Stock Overview</div>
+          <div class="chart-subtitle" id="chartSub">Price History · Technical Overlay</div>
+        </div>
       </div>
-      <div id="tv_chart_container" style="height:420px;width:100%;border-radius:6px;overflow:hidden;margin-top:1rem;border:1px solid var(--border);"></div>
+      <div id="tv_chart_container"
+        style="height:420px;width:100%;border-radius:6px;overflow:hidden;margin-top:1rem;border:1px solid var(--border);">
+      </div>
       <div class="indicators" id="indicatorsBar">
-        <div class="ind-box"><div class="ind-label">RSI (14)</div><div class="ind-val yellow" id="ind-rsi">--</div><div class="ind-interp" id="ind-rsi-text">--</div></div>
-        <div class="ind-box"><div class="ind-label">MACD Hist</div><div class="ind-val green" id="ind-macd">--</div><div class="ind-interp" id="ind-macd-text">--</div></div>
-        <div class="ind-box"><div class="ind-label">SMA 50</div><div class="ind-val" id="ind-sma50">--</div><div class="ind-interp" id="ind-sma50-text">--</div></div>
-        <div class="ind-box"><div class="ind-label">SMA 200</div><div class="ind-val" id="ind-sma200">--</div><div class="ind-interp" id="ind-sma200-text">--</div></div>
-        <div class="ind-box"><div class="ind-label">Volume</div><div class="ind-val" id="ind-vol">--</div><div class="ind-interp" id="ind-vol-text">--</div></div>
-        <div class="ind-box"><div class="ind-label">52W Range</div><div class="ind-val" id="ind-52w">--</div><div class="ind-interp" id="ind-52w-text">--</div></div>
+        <div class="ind-box">
+          <div class="ind-label">RSI (14)</div>
+          <div class="ind-val yellow" id="ind-rsi">--</div>
+          <div class="ind-interp" id="ind-rsi-text">--</div>
+        </div>
+        <div class="ind-box">
+          <div class="ind-label">MACD Hist</div>
+          <div class="ind-val green" id="ind-macd">--</div>
+          <div class="ind-interp" id="ind-macd-text">--</div>
+        </div>
+        <div class="ind-box">
+          <div class="ind-label">SMA 50</div>
+          <div class="ind-val" id="ind-sma50">--</div>
+          <div class="ind-interp" id="ind-sma50-text">--</div>
+        </div>
+        <div class="ind-box">
+          <div class="ind-label">SMA 200</div>
+          <div class="ind-val" id="ind-sma200">--</div>
+          <div class="ind-interp" id="ind-sma200-text">--</div>
+        </div>
+        <div class="ind-box">
+          <div class="ind-label">Volume</div>
+          <div class="ind-val" id="ind-vol">--</div>
+          <div class="ind-interp" id="ind-vol-text">--</div>
+        </div>
+        <div class="ind-box">
+          <div class="ind-label">52W Range</div>
+          <div class="ind-val" id="ind-52w">--</div>
+          <div class="ind-interp" id="ind-52w-text">--</div>
+        </div>
       </div>
     </div>
 
@@ -202,9 +1150,12 @@
         <div class="pred-icon">🤖</div>
         <div class="pred-info">
           <div class="pred-title" id="predTitle">ML Forecast (Random Forest + Technical Features)</div>
-          <div class="pred-desc" id="predDesc">Search a stock to run the real ML model — Random Forest trained on RSI, MACD, Bollinger Bands, momentum, volume signals.</div>
+          <div class="pred-desc" id="predDesc">Search a stock to run the real ML model — Random Forest trained on RSI,
+            MACD, Bollinger Bands, momentum, volume signals.</div>
           <div class="pred-conf">Model confidence: <span id="predConfPct">--</span></div>
-          <div class="conf-bar"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+          <div class="conf-bar">
+            <div class="conf-fill" id="confFill" style="width:0%"></div>
+          </div>
         </div>
         <div style="text-align:right;min-width:140px;">
           <div style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;">Composite Signal</div>
@@ -213,21 +1164,35 @@
         </div>
       </div>
       <div class="ml-details" id="mlDetails" style="display:none;">
-        <div class="ml-box"><div class="ml-label">Bull Probability</div><div class="ml-val" id="ml-bull">--</div></div>
-        <div class="ml-box"><div class="ml-label">Model Accuracy</div><div class="ml-val" id="ml-acc">--</div></div>
-        <div class="ml-box"><div class="ml-label">Predicted Return</div><div class="ml-val" id="ml-ret">--</div></div>
+        <div class="ml-box">
+          <div class="ml-label">Bull Probability</div>
+          <div class="ml-val" id="ml-bull">--</div>
+        </div>
+        <div class="ml-box">
+          <div class="ml-label">Model Accuracy</div>
+          <div class="ml-val" id="ml-acc">--</div>
+        </div>
+        <div class="ml-box">
+          <div class="ml-label">Predicted Return</div>
+          <div class="ml-val" id="ml-ret">--</div>
+        </div>
       </div>
     </div>
 
     <div class="sent-section">
       <div class="sent-card">
         <h3>📰 FinBERT NLP Sentiment — Live News</h3>
-        <div id="newsFeed"><div style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:.78rem;padding:1rem 0;">Search a stock to run FinBERT sentiment analysis on live news headlines...</div></div>
+        <div id="newsFeed">
+          <div style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:.78rem;padding:1rem 0;">
+            Search a stock to run FinBERT sentiment analysis on live news headlines...</div>
+        </div>
       </div>
-      <div class="sent-card">
+      <div class="sent-card" id="sentOverviewCard">
         <h3>📊 Sentiment Overview</h3>
-        <canvas id="sentChart" style="max-height:200px;"></canvas>
-        <div style="margin-top:1rem;font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--text-dim);" id="sentSummary">Bullish/Bearish/Neutral breakdown will appear after selecting a stock.</div>
+        <div id="sentOverviewBody">
+          <div style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:.78rem;padding:1rem 0;">
+            Search a stock to get AI-powered long-term &amp; short-term insights...</div>
+        </div>
       </div>
     </div>
   </section>
@@ -237,19 +1202,53 @@
     <div class="section-title">Your Portfolio</div>
     <div class="gold-line"></div>
     <div class="portfolio-grid">
-      <div class="pf-card"><div class="pf-label">Portfolio Value</div><div class="pf-value" id="pfValue">$0.00</div><div class="pf-sub" id="pfDay">Day P&L: $0.00</div></div>
-      <div class="pf-card"><div class="pf-label">Total Return</div><div class="pf-value green" id="pfReturn">0.00%</div><div class="pf-sub">Since inception</div></div>
-      <div class="pf-card"><div class="pf-label">Holdings</div><div class="pf-value" id="pfHoldings">0</div><div class="pf-sub">Active positions</div></div>
+      <div class="pf-card">
+        <div class="pf-label">Portfolio Value</div>
+        <div class="pf-value" id="pfValue">$0.00</div>
+        <div class="pf-sub" id="pfDay">Day P&L: $0.00</div>
+      </div>
+      <div class="pf-card">
+        <div class="pf-label">Total Return</div>
+        <div class="pf-value green" id="pfReturn">0.00%</div>
+        <div class="pf-sub">Since inception</div>
+      </div>
+      <div class="pf-card">
+        <div class="pf-label">Holdings</div>
+        <div class="pf-value" id="pfHoldings">0</div>
+        <div class="pf-sub">Active positions</div>
+      </div>
     </div>
-    <div style="margin-top:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.5rem;">
+    <div
+      style="margin-top:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.5rem;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;margin-bottom:1rem;">Add Position</div>
       <div style="display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;">
-        <input id="pfTicker" type="text" placeholder="Ticker" style="background:var(--dark2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.8rem;padding:.5rem .8rem;border-radius:3px;width:100px;" />
-        <input id="pfShares" type="number" placeholder="Shares" style="background:var(--dark2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.8rem;padding:.5rem .8rem;border-radius:3px;width:100px;" />
-        <input id="pfCost" type="number" placeholder="Buy Price" style="background:var(--dark2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.8rem;padding:.5rem .8rem;border-radius:3px;width:110px;" />
-        <button onclick="addPosition()" style="background:var(--gold);border:none;color:var(--dark);font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;padding:.55rem 1.2rem;border-radius:3px;cursor:pointer;">Add Position</button>
+        <input id="pfTicker" type="text" placeholder="Ticker"
+          style="background:var(--dark2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.8rem;padding:.5rem .8rem;border-radius:3px;width:100px;" />
+        <input id="pfShares" type="number" placeholder="Shares"
+          style="background:var(--dark2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.8rem;padding:.5rem .8rem;border-radius:3px;width:100px;" />
+        <input id="pfCost" type="number" placeholder="Buy Price"
+          style="background:var(--dark2);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.8rem;padding:.5rem .8rem;border-radius:3px;width:110px;" />
+        <button onclick="addPosition()"
+          style="background:var(--gold);border:none;color:var(--dark);font-family:'Syne',sans-serif;font-weight:700;font-size:.8rem;padding:.55rem 1.2rem;border-radius:3px;cursor:pointer;">Add
+          Position</button>
       </div>
-      <div style="overflow-x:auto;margin-top:1.2rem;"><table class="watch-table"><thead><tr><th>Symbol</th><th>Shares</th><th>Buy Price</th><th>Current</th><th>P&L</th><th>P&L %</th><th>Signal</th><th></th></tr></thead><tbody id="portfolioBody"></tbody></table></div>
+      <div style="overflow-x:auto;margin-top:1.2rem;">
+        <table class="watch-table">
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Shares</th>
+              <th>Buy Price</th>
+              <th>Current</th>
+              <th>P&L</th>
+              <th>P&L %</th>
+              <th>Signal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -258,18 +1257,23 @@
     <div class="section-title">🦞 OpenClaw Agent Interface</div>
     <div class="gold-line"></div>
     <p style="font-size:.85rem;color:var(--text-dim);max-width:680px;line-height:1.7;margin-bottom:1.5rem;">
-      StockSense runs as an <strong style="color:var(--text)">OpenClaw skill</strong> — your personal AI agent can analyze stocks directly through WhatsApp, Discord, Telegram, or Slack.
-      Every tool call is protected by <strong style="color:#FCA5A5">ArmorIQ</strong>: intent tokens, prompt-injection guards, and a fail-closed policy engine.
+      StockSense runs as an <strong style="color:var(--text)">OpenClaw skill</strong> — your personal AI agent can
+      analyze stocks directly through WhatsApp, Discord, Telegram, or Slack.
+      Every tool call is protected by <strong style="color:#FCA5A5">ArmorIQ</strong>: intent tokens, prompt-injection
+      guards, and a fail-closed policy engine.
     </p>
 
     <div class="claw-panel">
       <div class="claw-header">
-        <div class="claw-logo">🦞 OpenClaw <span style="color:var(--text-dim);font-weight:400;font-size:.8rem;">+ StockSense skill</span></div>
+        <div class="claw-logo">🦞 OpenClaw <span style="color:var(--text-dim);font-weight:400;font-size:.8rem;">+
+            StockSense skill</span></div>
         <div class="shield-badge" id="armoriqBadge">🛡️ ArmorIQ — unverified</div>
-        <div style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--text-dim);">Simulates: OpenClaw agent → /api/openclaw/{TICKER}</div>
+        <div style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--text-dim);">
+          Simulates: OpenClaw agent → /api/openclaw/{TICKER}</div>
       </div>
 
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--text-dim);margin-bottom:.4rem;">Try an agent command:</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--text-dim);margin-bottom:.4rem;">Try
+        an agent command:</div>
       <div class="example-cmds">
         <span class="ex-cmd" onclick="clawFill('Analyze AAPL')">Analyze AAPL</span>
         <span class="ex-cmd" onclick="clawFill('Should I buy NVDA?')">Should I buy NVDA?</span>
@@ -278,13 +1282,16 @@
         <span class="ex-cmd" onclick="clawFill('Run StockSense on AMD')">Run StockSense on AMD</span>
       </div>
 
-      <div class="claw-terminal" id="clawTerminal"><span class="prompt">You (via WhatsApp/Discord) &gt;</span> waiting for command…
+      <div class="claw-terminal" id="clawTerminal"><span class="prompt">You (via WhatsApp/Discord) &gt;</span> waiting
+        for command…
 
-<span style="color:var(--text-dim);">// OpenClaw receives your message, extracts the ticker,
-// calls GET /api/openclaw/{TICKER} with ArmorIQ intent verification.</span></div>
+        <span style="color:var(--text-dim);">// OpenClaw receives your message, extracts the ticker,
+          // calls GET /api/openclaw/{TICKER} with ArmorIQ intent verification.</span>
+      </div>
 
       <div class="claw-input-row">
-        <input class="claw-input" id="clawInput" placeholder="e.g. &quot;Analyze AAPL&quot; or &quot;Should I buy NVDA?&quot;" />
+        <input class="claw-input" id="clawInput"
+          placeholder="e.g. &quot;Analyze AAPL&quot; or &quot;Should I buy NVDA?&quot;" />
         <button class="claw-btn" id="clawBtn" onclick="runClawCommand()">Send to Agent →</button>
       </div>
 
@@ -296,44 +1303,93 @@
 
     <div style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
       <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
-        <div style="font-size:.75rem;font-family:'IBM Plex Mono',monospace;color:var(--gold);margin-bottom:.5rem;">01 · OPENCLAW SKILL</div>
-        <div style="font-size:.82rem;color:var(--text);line-height:1.6;">StockSense ships a <code style="background:rgba(255,255,255,.07);padding:.1rem .3rem;border-radius:2px;">skills/stocksense/SKILL.md</code> file. OpenClaw reads it, learns the endpoint, and auto-dispatches stock queries from any connected channel.</div>
+        <div style="font-size:.75rem;font-family:'IBM Plex Mono',monospace;color:var(--gold);margin-bottom:.5rem;">01 ·
+          OPENCLAW SKILL</div>
+        <div style="font-size:.82rem;color:var(--text);line-height:1.6;">StockSense ships a <code
+            style="background:rgba(255,255,255,.07);padding:.1rem .3rem;border-radius:2px;">skills/stocksense/SKILL.md</code>
+          file. OpenClaw reads it, learns the endpoint, and auto-dispatches stock queries from any connected channel.
+        </div>
       </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
-        <div style="font-size:.75rem;font-family:'IBM Plex Mono',monospace;color:#58a6ff;margin-bottom:.5rem;">02 · ARMORIQ SHIELD</div>
-        <div style="font-size:.82rem;color:var(--text);line-height:1.6;">Every agent tool call generates an <strong>intent token</strong>. ArmorIQ verifies the token and the approved plan before execution — blocking prompt injection and data exfiltration attempts.</div>
+        <div style="font-size:.75rem;font-family:'IBM Plex Mono',monospace;color:#58a6ff;margin-bottom:.5rem;">02 ·
+          ARMORIQ SHIELD</div>
+        <div style="font-size:.82rem;color:var(--text);line-height:1.6;">Every agent tool call generates an
+          <strong>intent token</strong>. ArmorIQ verifies the token and the approved plan before execution — blocking
+          prompt injection and data exfiltration attempts.
+        </div>
       </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2rem;">
-        <div style="font-size:.75rem;font-family:'IBM Plex Mono',monospace;color:#86EFAC;margin-bottom:.5rem;">03 · FAIL-CLOSED POLICY</div>
-        <div style="font-size:.82rem;color:var(--text);line-height:1.6;">ArmorIQ's policy allows only <code style="background:rgba(255,255,255,.07);padding:.1rem .3rem;border-radius:2px;">web_fetch(localhost:5050)</code>. Any attempt to access external URLs, read system files, or run shell commands is blocked before execution.</div>
+        <div style="font-size:.75rem;font-family:'IBM Plex Mono',monospace;color:#86EFAC;margin-bottom:.5rem;">03 ·
+          FAIL-CLOSED POLICY</div>
+        <div style="font-size:.82rem;color:var(--text);line-height:1.6;">ArmorIQ's policy allows only <code
+            style="background:rgba(255,255,255,.07);padding:.1rem .3rem;border-radius:2px;">web_fetch(localhost:5050)</code>.
+          Any attempt to access external URLs, read system files, or run shell commands is blocked before execution.
+        </div>
       </div>
     </div>
   </section>
 
   <footer>
-    <strong>StockSense</strong> — Built at OSSome Hacks by Team Venomstrike · Satyam Garg, Snehal Tiwari, Abhinav Sanjith, Ankit Rishiraaj<br>
-    <span style="margin-top:.4rem;display:block">Powered by yfinance · scikit-learn · RandomForest · FinBERT · Flask · feedparser · OpenClaw · ArmorIQ</span>
-    <span style="margin-top:.3rem;display:block;font-size:.62rem;">⚠️ For educational purposes only. Not financial advice.</span>
+    <strong>StockSense</strong> — Built at OSSome Hacks by Team Venomstrike · Satyam Garg, Snehal Tiwari, Abhinav
+    Sanjith, Ankit Rishiraaj<br>
+    <span style="margin-top:.4rem;display:block">Powered by yfinance · scikit-learn · RandomForest · FinBERT · Flask ·
+      feedparser · OpenClaw · ArmorIQ</span>
+    <span style="margin-top:.3rem;display:block;font-size:.62rem;">⚠️ For educational purposes only. Not financial
+      advice.</span>
   </footer>
   <div id="toast">✓ Done</div>
 
   <script>
     const API = 'http://localhost:5050';
     let portfolio = JSON.parse(localStorage.getItem('ss_portfolio') || '[]');
-    let sentChart = null;
 
-    function fmt(n, d=2) { if (n==null||isNaN(n)) return '--'; return Number(n).toLocaleString('en-US',{maximumFractionDigits:d}); }
-    function fmtB(n) { if(n==null) return '--'; let v=Number(n); if(v>=1e9) return (v/1e9).toFixed(2)+'B'; if(v>=1e6) return (v/1e6).toFixed(2)+'M'; return fmt(v); }
-    function setText(id, val) { let el=document.getElementById(id); if(el) el.textContent=val; }
-    function showToast(msg, isError=false) { let t=document.getElementById('toast'); t.textContent=msg; t.classList.toggle('error',isError); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
-    function setLoading(show, msg='') { let el=document.getElementById('chartArea'); let existing=el.querySelector('.loading-overlay'); if(show){ if(!existing){ let ov=document.createElement('div'); ov.className='loading-overlay'; ov.innerHTML=`<div class="spinner"></div><div class="loading-text">${msg}</div>`; el.appendChild(ov); } } else { if(existing) existing.remove(); } }
+    // ── Gemini API Configuration ──────────────────────────────────────
+    // Replace the value below with your Google AI Studio API key.
+    const GEMINI_API_KEY = 'AIzaSyCZ4934jVCColW841JV3jXvBcgz0xGsADE';
+
+    // ── Gemini Prompt Template ────────────────────────────────────────
+    // Edit this function to customise the prompt sent to Gemini.
+    // All key stock metrics are injected automatically at call-time.
+    function buildGeminiPrompt(ticker, metrics) {
+      return `You are a concise financial analyst assistant for retail investors.
+
+Stock: ${ticker}
+Current Price: $${metrics.currentPrice}
+RSI (14): ${metrics.rsi} — ${metrics.rsiLabel}
+MACD Histogram: ${metrics.macd} (${metrics.macdLabel})
+SMA 50: ${metrics.sma50}
+SMA 200: ${metrics.sma200}
+52-Week Range: ${metrics.lo52} – ${metrics.hi52} (stock is at ${metrics.rangePosition}% of its annual range)
+Volume (latest session): ${metrics.volume}
+ML Signal: ${metrics.mlSignal} · Confidence: ${metrics.mlConfidence}% · Bull Probability: ${metrics.bullProb}%
+Predicted Return: ${metrics.predictedReturn}%
+FinBERT Sentiment Score: ${metrics.sentScore} (${metrics.sentLabel})
+News Snapshot (top 5 headlines with sentiment):
+${metrics.headlines}
+
+Task: Write exactly two short paragraphs — no headings, no bullet points, no markdown, plain prose only.
+
+Paragraph 1 — Long-Term Perspective (3–4 sentences): Consider the long-term perspective of holding this stock for 6–18 months. Analyze the trends. Search the web to get insights about the stock. Finally write a small 3-4 line paragraph explaining to the user in very simple words what actions he should take for this stock if he planning for long term investment. Be confident and be accurate.
+
+Paragraph 2 — Short-Term Perspective (3–4 sentences): Consider the short-term perspective of holding this stock for few days or weeks. Analyze the trends. Search the web to get insights about the stock. Finally write a small 3-4 line paragraph explaining to the user in very simple words what actions he should take for this stock if he planning for immediate. Be confident and be accurate.
+
+Separate the two paragraphs with exactly the token "|||" on its own, so I can split them programmatically. Do not include the token anywhere else.`;
+    }
+    // ─────────────────────────────────────────────────────────────────
+
+
+    function fmt(n, d = 2) { if (n == null || isNaN(n)) return '--'; return Number(n).toLocaleString('en-US', { maximumFractionDigits: d }); }
+    function fmtB(n) { if (n == null) return '--'; let v = Number(n); if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B'; if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M'; return fmt(v); }
+    function setText(id, val) { let el = document.getElementById(id); if (el) el.textContent = val; }
+    function showToast(msg, isError = false) { let t = document.getElementById('toast'); t.textContent = msg; t.classList.toggle('error', isError); t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+    function setLoading(show, msg = '') { let el = document.getElementById('chartArea'); let existing = el.querySelector('.loading-overlay'); if (show) { if (!existing) { let ov = document.createElement('div'); ov.className = 'loading-overlay'; ov.innerHTML = `<div class="spinner"></div><div class="loading-text">${msg}</div>`; el.appendChild(ov); } } else { if (existing) existing.remove(); } }
 
     async function checkBackend() {
       try {
-        let r = await fetch(`${API}/api/health`, {signal: AbortSignal.timeout(3000)});
-        if (r.ok) { document.getElementById('backendStatus').textContent='LIVE'; document.getElementById('backendStatus').style.background='var(--teal)'; }
+        let r = await fetch(`${API}/api/health`, { signal: AbortSignal.timeout(3000) });
+        if (r.ok) { document.getElementById('backendStatus').textContent = 'LIVE'; document.getElementById('backendStatus').style.background = 'var(--teal)'; }
       } catch {
-        document.getElementById('backendStatus').textContent='OFFLINE'; document.getElementById('backendStatus').style.background='#7f1d1d'; document.getElementById('backendStatus').style.borderColor='var(--down)';
+        document.getElementById('backendStatus').textContent = 'OFFLINE'; document.getElementById('backendStatus').style.background = '#7f1d1d'; document.getElementById('backendStatus').style.borderColor = 'var(--down)';
       }
     }
 
@@ -344,12 +1400,12 @@
       script.type = 'text/javascript';
       script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
       script.async = true;
-      script.innerHTML = JSON.stringify({ "symbols":[[ticker, ticker+"|1D"]], "chartOnly":true, "width":"100%", "height":"100%", "locale":"en", "colorTheme":"dark", "autosize":true, "showVolume":false, "showMA":false, "hideDateRanges":false, "scalePosition":"right", "fontFamily":"'IBM Plex Mono', monospace", "lineColor":"rgba(212,160,23,1)", "backgroundColor":"rgba(26,26,26,1)" });
+      script.innerHTML = JSON.stringify({ "symbols": [[ticker, ticker + "|1D"]], "chartOnly": true, "width": "100%", "height": "100%", "locale": "en", "colorTheme": "dark", "autosize": true, "showVolume": false, "showMA": false, "hideDateRanges": false, "scalePosition": "right", "fontFamily": "'IBM Plex Mono', monospace", "lineColor": "rgba(212,160,23,1)", "backgroundColor": "rgba(26,26,26,1)" });
       container.appendChild(script);
     }
 
     async function loadStock(sym) {
-      let ticker = (sym||'').trim().toUpperCase();
+      let ticker = (sym || '').trim().toUpperCase();
       if (!ticker) return;
       document.getElementById('searchInput').value = ticker;
       setText('chartTitle', `Analyzing ${ticker}...`);
@@ -358,14 +1414,14 @@
 
       try {
         let res = await fetch(`${API}/api/analyze/${ticker}`);
-        if (!res.ok) { let err = await res.json(); throw new Error(err.error||'Analysis failed'); }
+        if (!res.ok) { let err = await res.json(); throw new Error(err.error || 'Analysis failed'); }
         let data = await res.json();
         setLoading(false);
 
         let t = data.technicals, ml = data.ml_forecast, s = data.sentiment;
 
         setText('chartTitle', `${ticker} · Live Analysis`);
-        setText('chartSub', `Price: $${fmt(t.current_price)} · FinBERT Sentiment: ${s.avg_score>0.05?'Positive':s.avg_score<-0.05?'Negative':'Neutral'}`);
+        setText('chartSub', `Price: $${fmt(t.current_price)} · FinBERT Sentiment: ${s.avg_score > 0.05 ? 'Positive' : s.avg_score < -0.05 ? 'Negative' : 'Neutral'}`);
 
         let rsiEl = document.getElementById('ind-rsi');
         rsiEl.textContent = t.rsi.toFixed(1);
@@ -384,17 +1440,17 @@
         setText('ind-vol', fmtB(t.volume));
         setText('ind-vol-text', 'Latest session');
         setText('ind-52w', `$${fmt(t.lo52)} – $${fmt(t.hi52)}`);
-        setText('ind-52w-text', `${(((t.current_price-t.lo52)/(t.hi52-t.lo52))*100).toFixed(0)}% of range`);
+        setText('ind-52w-text', `${(((t.current_price - t.lo52) / (t.hi52 - t.lo52)) * 100).toFixed(0)}% of range`);
 
         setText('predTitle', `ML Forecast (RandomForest) — ${ticker}`);
-        setText('predDesc', `RSI ${t.rsi.toFixed(1)} · MACD ${t.macd_hist>0?'bullish':'bearish'} · FinBERT sentiment ${s.avg_score>0.05?'positive':s.avg_score<-0.05?'negative':'neutral'} (${(s.avg_score*100).toFixed(1)}%) · Bull probability ${ml.bull_probability}%`);
+        setText('predDesc', `RSI ${t.rsi.toFixed(1)} · MACD ${t.macd_hist > 0 ? 'bullish' : 'bearish'} · FinBERT sentiment ${s.avg_score > 0.05 ? 'positive' : s.avg_score < -0.05 ? 'negative' : 'neutral'} (${(s.avg_score * 100).toFixed(1)}%) · Bull probability ${ml.bull_probability}%`);
         setText('predConfPct', `${ml.confidence}%`);
         document.getElementById('confFill').style.width = `${ml.confidence}%`;
 
         let sigEl = document.getElementById('predSignal');
         sigEl.textContent = ml.signal;
-        sigEl.style.color = ml.signal==='BUY'?'var(--up)': ml.signal==='SELL'?'var(--down)':'var(--neutral)';
-        setText('predTarget', `Target: $${fmt(ml.target_price)} (${ml.predicted_return_pct>0?'+':''}${ml.predicted_return_pct.toFixed(2)}%)`);
+        sigEl.style.color = ml.signal === 'BUY' ? 'var(--up)' : ml.signal === 'SELL' ? 'var(--down)' : 'var(--neutral)';
+        setText('predTarget', `Target: $${fmt(ml.target_price)} (${ml.predicted_return_pct > 0 ? '+' : ''}${ml.predicted_return_pct.toFixed(2)}%)`);
 
         document.getElementById('mlDetails').style.display = 'grid';
         let bullEl = document.getElementById('ml-bull');
@@ -402,12 +1458,13 @@
         bullEl.className = 'ml-val ' + (ml.bull_probability >= 55 ? 'green' : ml.bull_probability <= 45 ? 'red' : 'yellow');
         setText('ml-acc', `${ml.model_accuracy}%`);
         let retEl = document.getElementById('ml-ret');
-        retEl.textContent = `${ml.predicted_return_pct>0?'+':''}${ml.predicted_return_pct.toFixed(2)}%`;
+        retEl.textContent = `${ml.predicted_return_pct > 0 ? '+' : ''}${ml.predicted_return_pct.toFixed(2)}%`;
         retEl.className = 'ml-val ' + (ml.predicted_return_pct >= 0 ? 'green' : 'red');
 
         renderNewsAndSentiment(s);
+        fetchGeminiInsights(ticker, t, ml, s);
         showToast(`${ticker} — ML + FinBERT analysis complete`);
-        document.getElementById('analysis').scrollIntoView({behavior:'smooth'});
+        document.getElementById('analysis').scrollIntoView({ behavior: 'smooth' });
 
       } catch (e) {
         setLoading(false);
@@ -422,66 +1479,151 @@
       if (!articles.length) { newsDiv.innerHTML = '<div style="color:var(--text-dim);padding:1rem 0;">No news found.</div>'; return; }
 
       newsDiv.innerHTML = articles.map(a => {
-        let badgeClass = a.sentiment_label==='Bullish'?'nb-pos': a.sentiment_label==='Bearish'?'nb-neg':'nb-neu';
+        let badgeClass = a.sentiment_label === 'Bullish' ? 'nb-pos' : a.sentiment_label === 'Bearish' ? 'nb-neg' : 'nb-neu';
         let timeStr = a.published ? new Date(a.published).toLocaleString() : '';
-        let conf = a.confidence ? ` (${(a.confidence*100).toFixed(0)}%)` : '';
+        let conf = a.confidence ? ` (${(a.confidence * 100).toFixed(0)}%)` : '';
         return `<div class="news-item"><span class="news-badge ${badgeClass}">${a.sentiment_label}${conf}</span><div><div class="news-text">${a.title}</div><div class="news-source">${a.source} · ${timeStr}</div></div></div>`;
       }).join('');
 
-      let total = s.bullish_count + s.bearish_count + s.neutral_count || 1;
-      setText('sentSummary', `FinBERT: Bullish ${Math.round(s.bullish_count/total*100)}% · Bearish ${Math.round(s.bearish_count/total*100)}% · Neutral ${Math.round(s.neutral_count/total*100)}%`);
 
-      if (sentChart) sentChart.destroy();
-      let ctx = document.getElementById('sentChart').getContext('2d');
-      sentChart = new Chart(ctx, { type:'doughnut', data:{ labels:['Bullish','Bearish','Neutral'], datasets:[{ data:[s.bullish_count,s.bearish_count,s.neutral_count], backgroundColor:['rgba(34,197,94,.7)','rgba(239,68,68,.7)','rgba(250,204,21,.5)'], borderColor:['#22C55E','#EF4444','#FACC15'], borderWidth:2 }] }, options:{ responsive:true, maintainAspectRatio:true, plugins:{ legend:{ labels:{ color:'#9A8E72', font:{ size:10 } } } } } });
     }
 
-    async function searchStock() { let sym = (document.getElementById('searchInput')?.value||'').trim().toUpperCase(); if(sym) await loadStock(sym); }
-    document.getElementById('searchInput')?.addEventListener('keydown', e => { if(e.key==='Enter') searchStock(); });
+    // ── Gemini Insights Loader ────────────────────────────────────────
+    async function fetchGeminiInsights(ticker, t, ml, s) {
+      const overviewBody = document.getElementById('sentOverviewBody');
+
+      // Show shimmer loading state while waiting for Gemini
+      overviewBody.innerHTML = `
+        <div class="insight-loading">
+          <div class="shimmer-line w90"></div>
+          <div class="shimmer-line w75"></div>
+          <div class="shimmer-line w60"></div>
+          <div style="margin-top:.5rem"></div>
+          <div class="shimmer-line w90"></div>
+          <div class="shimmer-line w75"></div>
+          <div class="shimmer-line w60"></div>
+        </div>`;
+
+      // Build the metrics object from all available stock data
+      const topHeadlines = (s.articles || []).slice(0, 5)
+        .map((a, i) => `${i + 1}. [${a.sentiment_label}] ${a.title}`).join('\n') || 'No headlines available.';
+
+      const metrics = {
+        currentPrice: fmt(t.current_price),
+        rsi: t.rsi.toFixed(1),
+        rsiLabel: t.rsi < 30 ? 'Oversold' : t.rsi > 70 ? 'Overbought' : 'Neutral',
+        macd: t.macd_hist.toFixed(4),
+        macdLabel: t.macd_hist > 0 ? 'Bullish crossover' : 'Bearish crossover',
+        sma50: t.sma50 ? `$${fmt(t.sma50)}` : 'N/A',
+        sma200: t.sma200 ? `$${fmt(t.sma200)}` : 'N/A',
+        lo52: `$${fmt(t.lo52)}`,
+        hi52: `$${fmt(t.hi52)}`,
+        rangePosition: (((t.current_price - t.lo52) / (t.hi52 - t.lo52)) * 100).toFixed(0),
+        volume: fmtB(t.volume),
+        mlSignal: ml.signal,
+        mlConfidence: ml.confidence,
+        bullProb: ml.bull_probability,
+        predictedReturn: ml.predicted_return_pct.toFixed(2),
+        sentScore: s.avg_score.toFixed(3),
+        sentLabel: s.avg_score > 0.05 ? 'Positive' : s.avg_score < -0.05 ? 'Negative' : 'Neutral',
+        headlines: topHeadlines
+      };
+
+      try {
+        const prompt = buildGeminiPrompt(ticker, metrics);
+
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.65 }
+            })
+          }
+        );
+
+        if (!geminiRes.ok) {
+          const errJson = await geminiRes.json().catch(() => ({}));
+          throw new Error(errJson?.error?.message || `HTTP ${geminiRes.status}`);
+        }
+
+        const geminiData = await geminiRes.json();
+        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        // Split on the separator token the prompt instructs Gemini to use
+        const parts = rawText.split('|||');
+        const longTermText = (parts[0] || '').trim();
+        const shortTermText = (parts[1] || '').trim();
+
+        if (!longTermText && !shortTermText) throw new Error('Empty response from Gemini.');
+
+        overviewBody.innerHTML = `
+          <div class="insight-block">
+            <div class="insight-card long-term">
+              <div class="insight-label">Long-Term Outlook (6 – 18 months)</div>
+              <div class="insight-text">${longTermText || 'No long-term insight returned.'}</div>
+            </div>
+            <div class="insight-card short-term">
+              <div class="insight-label">Short-Term Outlook (Days – Weeks)</div>
+              <div class="insight-text">${shortTermText || 'No short-term insight returned.'}</div>
+            </div>
+          </div>
+          <div class="gemini-badge">✦ Powered by Google Gemini · For educational purposes only. Not financial advice.</div>`;
+
+      } catch (err) {
+        overviewBody.innerHTML = `<div class="insight-error">⚠ Gemini API error: ${err.message}<br><span style="font-size:.65rem;opacity:.7">Check that GEMINI_API_KEY is set correctly in the script.</span></div>`;
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────
+
+    async function searchStock() { let sym = (document.getElementById('searchInput')?.value || '').trim().toUpperCase(); if (sym) await loadStock(sym); }
+    document.getElementById('searchInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') searchStock(); });
 
     async function renderPortfolio() {
       let tbody = document.getElementById('portfolioBody');
-      if (!portfolio.length) { tbody.innerHTML='<tr><td colspan="8" style="padding:1rem;">No positions.</td></tr>'; setText('pfValue','$0.00'); setText('pfReturn','0.00%'); setText('pfHoldings','0'); return; }
-      let syms = [...new Set(portfolio.map(p=>p.sym))];
+      if (!portfolio.length) { tbody.innerHTML = '<tr><td colspan="8" style="padding:1rem;">No positions.</td></tr>'; setText('pfValue', '$0.00'); setText('pfReturn', '0.00%'); setText('pfHoldings', '0'); return; }
+      let syms = [...new Set(portfolio.map(p => p.sym))];
       let priceMap = {};
       await Promise.all(syms.map(async sym => {
         try {
           let r = await fetch(`${API}/api/quote/${sym}`);
-          if (r.ok) { let q=await r.json(); priceMap[sym]=q.price; }
-        } catch {}
+          if (r.ok) { let q = await r.json(); priceMap[sym] = q.price; }
+        } catch { }
       }));
-      let totalVal=0, totalCost=0;
-      tbody.innerHTML='';
-      portfolio.forEach((p,i) => {
+      let totalVal = 0, totalCost = 0;
+      tbody.innerHTML = '';
+      portfolio.forEach((p, i) => {
         let cur = priceMap[p.sym] || p.cost;
-        let val = cur*p.shares, cost=p.cost*p.shares, pnl=val-cost;
-        totalVal+=val; totalCost+=cost;
-        let pnlPct = ((pnl/cost)*100).toFixed(2);
-        let sigClass = pnl>0?'sig-buy':pnl<0?'sig-sell':'sig-hold';
-        let sigText = pnl>0?'PROFIT':pnl<0?'LOSS':'FLAT';
+        let val = cur * p.shares, cost = p.cost * p.shares, pnl = val - cost;
+        totalVal += val; totalCost += cost;
+        let pnlPct = ((pnl / cost) * 100).toFixed(2);
+        let sigClass = pnl > 0 ? 'sig-buy' : pnl < 0 ? 'sig-sell' : 'sig-hold';
+        let sigText = pnl > 0 ? 'PROFIT' : pnl < 0 ? 'LOSS' : 'FLAT';
         let tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.sym}</td><td>${p.shares}</td><td>$${fmt(p.cost)}</td><td>$${fmt(cur)}</td><td style="color:${pnl>=0?'var(--up)':'var(--down)'}">${pnl>=0?'+':''}$${fmt(Math.abs(pnl))}</td><td style="color:${pnl>=0?'var(--up)':'var(--down)'}">${pnl>=0?'+':''}${pnlPct}%</td><td><span class="sc-signal ${sigClass}">${sigText}</span></td><td><button onclick="removePosition(${i})" style="background:transparent;border:1px solid rgba(239,68,68,.4);color:#FCA5A5;font-size:.68rem;padding:.2rem .5rem;border-radius:2px;cursor:pointer;">✕</button></td>`;
+        tr.innerHTML = `<td>${p.sym}</td><td>${p.shares}</td><td>$${fmt(p.cost)}</td><td>$${fmt(cur)}</td><td style="color:${pnl >= 0 ? 'var(--up)' : 'var(--down)'}">${pnl >= 0 ? '+' : ''}$${fmt(Math.abs(pnl))}</td><td style="color:${pnl >= 0 ? 'var(--up)' : 'var(--down)'}">${pnl >= 0 ? '+' : ''}${pnlPct}%</td><td><span class="sc-signal ${sigClass}">${sigText}</span></td><td><button onclick="removePosition(${i})" style="background:transparent;border:1px solid rgba(239,68,68,.4);color:#FCA5A5;font-size:.68rem;padding:.2rem .5rem;border-radius:2px;cursor:pointer;">✕</button></td>`;
         tbody.appendChild(tr);
       });
-      setText('pfValue','$'+fmt(totalVal));
-      let ret = totalCost ? ((totalVal-totalCost)/totalCost)*100 : 0;
-      setText('pfReturn', ret.toFixed(2)+'%');
+      setText('pfValue', '$' + fmt(totalVal));
+      let ret = totalCost ? ((totalVal - totalCost) / totalCost) * 100 : 0;
+      setText('pfReturn', ret.toFixed(2) + '%');
       setText('pfHoldings', portfolio.length);
     }
 
     async function addPosition() {
-      let sym = (document.getElementById('pfTicker').value||'').trim().toUpperCase();
+      let sym = (document.getElementById('pfTicker').value || '').trim().toUpperCase();
       let shares = parseFloat(document.getElementById('pfShares').value);
       let cost = parseFloat(document.getElementById('pfCost').value);
-      if (!sym||!shares||!cost) return showToast('Fill all fields', true);
-      portfolio.push({sym,shares,cost});
+      if (!sym || !shares || !cost) return showToast('Fill all fields', true);
+      portfolio.push({ sym, shares, cost });
       localStorage.setItem('ss_portfolio', JSON.stringify(portfolio));
-      document.getElementById('pfTicker').value=''; document.getElementById('pfShares').value=''; document.getElementById('pfCost').value='';
+      document.getElementById('pfTicker').value = ''; document.getElementById('pfShares').value = ''; document.getElementById('pfCost').value = '';
       await renderPortfolio();
       showToast(`${sym} added to portfolio`);
     }
 
-    function removePosition(i) { portfolio.splice(i,1); localStorage.setItem('ss_portfolio',JSON.stringify(portfolio)); renderPortfolio(); }
+    function removePosition(i) { portfolio.splice(i, 1); localStorage.setItem('ss_portfolio', JSON.stringify(portfolio)); renderPortfolio(); }
 
     (async function init() {
       await checkBackend();
@@ -496,7 +1638,7 @@
 
     function extractTicker(cmd) {
       // Simple extraction: grab known tickers or last ALLCAPS word
-      const known = ['AAPL','MSFT','NVDA','TSLA','AMZN','META','GOOGL','AMD','NFLX','JPM','BAC'];
+      const known = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'META', 'GOOGL', 'AMD', 'NFLX', 'JPM', 'BAC'];
       const upper = cmd.toUpperCase();
       for (const t of known) { if (upper.includes(t)) return t; }
       const words = cmd.trim().split(/\s+/);
@@ -541,44 +1683,45 @@
         }
 
         const aiq = data.armoriq || {};
-        const sigColor = data.signal==='BUY'?'#86EFAC': data.signal==='SELL'?'#FCA5A5':'#FDE68A';
+        const sigColor = data.signal === 'BUY' ? '#86EFAC' : data.signal === 'SELL' ? '#FCA5A5' : '#FDE68A';
         const retSign = data.predicted_return_pct >= 0 ? '+' : '';
 
-        term.innerHTML += `\n\n<span style="color:#7ee787">✅ ArmorIQ verified · token ${(aiq.intent_token||'').slice(0,8)}… · injection_check: ${aiq.injection_check||'passed'}</span>\n\n` +
+        term.innerHTML += `\n\n<span style="color:#7ee787">✅ ArmorIQ verified · token ${(aiq.intent_token || '').slice(0, 8)}… · injection_check: ${aiq.injection_check || 'passed'}</span>\n\n` +
           `<span style="color:var(--gold-light);font-weight:600">📊 ${data.ticker} Analysis</span>\n` +
           `   Signal: <span style="color:${sigColor};font-weight:700">${data.signal}</span> · Confidence: ${data.confidence}%\n` +
           `   Current: $${data.current_price} → Target: $${data.target_price} (${retSign}${data.predicted_return_pct}% projected)\n` +
-          `   🤖 ML: Bull probability ${data.bull_probability}% · RSI ${data.rsi} (${data.rsi<30?'oversold':data.rsi>70?'overbought':'neutral'})\n` +
+          `   🤖 ML: Bull probability ${data.bull_probability}% · RSI ${data.rsi} (${data.rsi < 30 ? 'oversold' : data.rsi > 70 ? 'overbought' : 'neutral'})\n` +
           `   📰 FinBERT: ${data.news_bull_pct}% bullish headlines · News sentiment ${data.news_sentiment}\n` +
-          (data.top_headlines||[]).slice(0,3).map(h=>`   · [${h.sentiment}] ${h.title.slice(0,70)}${h.title.length>70?'…':''}`).join('\n') +
+          (data.top_headlines || []).slice(0, 3).map(h => `   · [${h.sentiment}] ${h.title.slice(0, 70)}${h.title.length > 70 ? '…' : ''}`).join('\n') +
           `\n\n<span style="color:var(--text-dim)">⚠️ For educational purposes only. Not financial advice.</span>`;
 
         badge.textContent = '🛡️ ArmorIQ — verified ✓';
         badge.className = 'shield-badge verified';
 
         logContent.innerHTML =
-          `<div>timestamp: ${aiq.timestamp||new Date().toISOString()}</div>` +
-          `<div>intent_token: ${aiq.intent_token||'n/a'}</div>` +
+          `<div>timestamp: ${aiq.timestamp || new Date().toISOString()}</div>` +
+          `<div>intent_token: ${aiq.intent_token || 'n/a'}</div>` +
           `<div>tool: web_fetch → localhost:5050/api/openclaw/${ticker}</div>` +
           `<div>action: <span style="color:#7ee787">allowed</span></div>` +
-          `<div>policy: ${aiq.policy||'allow:web_fetch(localhost:5050)'}</div>` +
-          `<div>injection_check: ${aiq.injection_check||'passed'}</div>` +
+          `<div>policy: ${aiq.policy || 'allow:web_fetch(localhost:5050)'}</div>` +
+          `<div>injection_check: ${aiq.injection_check || 'passed'}</div>` +
           `<div>reason: Token valid · proof verified · policy allows</div>`;
         logDiv.classList.add('show');
 
         // Also load the full analysis in the main panel
         loadStock(ticker);
 
-      } catch(e) {
+      } catch (e) {
         btn.disabled = false;
         term.innerHTML += `\n\n<span style="color:#FCA5A5">Connection error: ${e.message}\nIs the Python backend running on port 5050?</span>`;
         badge.textContent = '🛡️ ArmorIQ — offline';
       }
     }
 
-    document.getElementById('clawInput')?.addEventListener('keydown', e => { if(e.key==='Enter') runClawCommand(); });
+    document.getElementById('clawInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') runClawCommand(); });
     // ─────────────────────────────────────────────────────────────────
 
   </script>
 </body>
+
 </html>
