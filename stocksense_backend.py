@@ -3,6 +3,7 @@ import sys
 if sys.version_info.major == 3 and sys.version_info.minor >= 13:
     print("❌ ERROR: Python 3.13 not supported. Use Python 3.11 or 3.12")
     sys.exit(1)
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import yfinance as yf
@@ -14,6 +15,9 @@ from sklearn.ensemble import RandomForestClassifier
 from transformers import pipeline
 import feedparser
 import requests
+import time
+import secrets
+import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -33,11 +37,44 @@ def get_sentiment_pipe():
         )
     return _sentiment_pipe
 
+# ========== INDIAN STOCKS SUPPORT ==========
+def normalize_indian_symbol(symbol):
+    """Convert Indian tickers to Yahoo Finance format (add .NS for NSE)"""
+    symbol = symbol.upper().strip()
+    
+    nse_stocks = [
+        'SBIN', 'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
+        'KOTAKBANK', 'AXISBANK', 'BHARTIARTL', 'ITC', 'WIPRO', 
+        'TATAMOTORS', 'TATASTEEL', 'SUNPHARMA', 'HINDUNILVR', 
+        'MARUTI', 'ONGC', 'NTPC', 'POWERGRID', 'ADANIPORTS',
+        'ASIANPAINT', 'BAJFINANCE', 'HCLTECH', 'NESTLE', 'TITAN',
+        'UPL', 'ZEEL', 'YESBANK', 'PNB', 'VEDL', 'COALINDIA', 'BPCL'
+    ]
+    
+    if symbol.endswith('.NS') or symbol.endswith('.BO'):
+        return symbol
+    if symbol in nse_stocks:
+        return f"{symbol}.NS"
+    return symbol
+
 def fetch_ohlcv(ticker, period="2y"):
-    tk = yf.Ticker(ticker)
-    df = tk.history(period=period, interval="1d")
-    df.dropna(inplace=True)
-    return df
+    time.sleep(0.5)
+    original_ticker = ticker
+    ticker = normalize_indian_symbol(ticker)
+    try:
+        tk = yf.Ticker(ticker)
+        df = tk.history(period=period, interval="1d")
+        if df.empty and not ticker.endswith('.BO'):
+            fallback = original_ticker.upper() + '.BO'
+            tk = yf.Ticker(fallback)
+            df = tk.history(period=period, interval="1d")
+        if df.empty:
+            raise Exception(f"No data for {original_ticker}")
+        df.dropna(inplace=True)
+        return df
+    except Exception as e:
+        print(f"❌ Error fetching {original_ticker}: {e}")
+        raise e
 
 def compute_rsi(series, n=14):
     delta = series.diff()
@@ -92,6 +129,9 @@ def ml_forecast(df, horizon=5):
     X = df[feature_cols].values
     closes = df['Close'].values
 
+    if np.isnan(X).any() or np.isinf(X).any():
+        X = np.nan_to_num(X, nan=0.0, posinf=1e6, neginf=-1e6)
+
     future_returns = []
     for i in range(len(closes) - horizon):
         ret = (closes[i + horizon] - closes[i]) / closes[i]
@@ -137,10 +177,40 @@ def ml_forecast(df, horizon=5):
 
 def fetch_news_rss(ticker):
     company_map = {
+        # US
         'AAPL': 'Apple', 'MSFT': 'Microsoft', 'GOOGL': 'Google',
         'NVDA': 'NVIDIA', 'TSLA': 'Tesla', 'AMZN': 'Amazon',
         'META': 'Meta', 'AMD': 'AMD', 'NFLX': 'Netflix',
-        'JPM': 'JPMorgan', 'BAC': 'Bank of America'
+        'JPM': 'JPMorgan', 'BAC': 'Bank of America',
+        # India
+        'SBIN': 'State Bank of India',
+        'RELIANCE': 'Reliance Industries',
+        'TCS': 'Tata Consultancy Services',
+        'INFY': 'Infosys',
+        'HDFCBANK': 'HDFC Bank',
+        'ICICIBANK': 'ICICI Bank',
+        'KOTAKBANK': 'Kotak Mahindra Bank',
+        'AXISBANK': 'Axis Bank',
+        'BHARTIARTL': 'Bharti Airtel',
+        'ITC': 'ITC Limited',
+        'WIPRO': 'Wipro',
+        'TATAMOTORS': 'Tata Motors',
+        'TATASTEEL': 'Tata Steel',
+        'SUNPHARMA': 'Sun Pharma',
+        'HINDUNILVR': 'Hindustan Unilever',
+        'MARUTI': 'Maruti Suzuki',
+        'ONGC': 'Oil and Natural Gas Corporation',
+        'NTPC': 'NTPC Limited',
+        'POWERGRID': 'Power Grid Corporation',
+        'ADANIPORTS': 'Adani Ports',
+        'ASIANPAINT': 'Asian Paints',
+        'BAJFINANCE': 'Bajaj Finance',
+        'HCLTECH': 'HCL Technologies',
+        'NESTLE': 'Nestle India',
+        'TITAN': 'Titan Company',
+        'UPL': 'UPL Limited', 'ZEEL': 'Zee Entertainment',
+        'YESBANK': 'Yes Bank', 'PNB': 'Punjab National Bank',
+        'VEDL': 'Vedanta', 'COALINDIA': 'Coal India', 'BPCL': 'Bharat Petroleum'
     }
     query = company_map.get(ticker, ticker)
     urls = [
@@ -190,16 +260,37 @@ def analyze_sentiment_finbert(articles):
         })
     return enriched
 
+# ---------- NEW ENDPOINT FOR CHART DATA ----------
+@app.route('/api/history/<ticker>')
+def history(ticker):
+    ticker = ticker.upper().strip()
+    normalized = normalize_indian_symbol(ticker)
+    try:
+        tk = yf.Ticker(normalized)
+        hist = tk.history(period='6mo')
+        if hist.empty:
+            return jsonify({'error': 'No data'}), 404
+        data = []
+        for date, row in hist.iterrows():
+            data.append({
+                'date': date.strftime('%Y-%m-%d'),
+                'close': round(float(row['Close']), 2)
+            })
+        return jsonify({'ticker': ticker, 'data': data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ---------- OTHER EXISTING ENDPOINTS ----------
 @app.route('/api/analyze/<ticker>')
 def analyze(ticker):
     ticker = ticker.upper().strip()
+    normalized = normalize_indian_symbol(ticker)
     try:
-        df = fetch_ohlcv(ticker)
+        df = fetch_ohlcv(normalized)
         if df.empty:
             return jsonify({'error': f'No data found for {ticker}'}), 404
 
         df_feat = build_features(df)
-
         closes = df_feat['Close'].values
         current_price = float(closes[-1])
         rsi_val = float(df_feat['rsi'].iloc[-1])
@@ -209,92 +300,52 @@ def analyze(ticker):
         bb_upper_val = float(df_feat['bb_upper'].iloc[-1])
         bb_lower_val = float(df_feat['bb_lower'].iloc[-1])
         volume_val = int(df.iloc[-1]['Volume'])
-
         hi52 = float(df['Close'].rolling(min(252, len(df))).max().iloc[-1])
         lo52 = float(df['Close'].rolling(min(252, len(df))).min().iloc[-1])
-
         forecast = ml_forecast(df)
-
         articles = fetch_news_rss(ticker)
         enriched_news = analyze_sentiment_finbert(articles)
-
         sentiment_scores = [a['sentiment_score'] for a in enriched_news]
         avg_sentiment = float(np.mean(sentiment_scores)) if sentiment_scores else 0.0
-
         bull_count = sum(1 for a in enriched_news if a['sentiment_label'] == 'Bullish')
         bear_count = sum(1 for a in enriched_news if a['sentiment_label'] == 'Bearish')
         neu_count = sum(1 for a in enriched_news if a['sentiment_label'] == 'Neutral')
 
+        # composite score logic (unchanged)
         composite_score = 0.0
-        
-        # RSI Logic (fixed)
-        if rsi_val < 30: 
-            composite_score += 0.9      # Strong BUY (oversold)
-        elif rsi_val < 40: 
-            composite_score += 0.4      # Mild BUY
-        elif rsi_val > 80: 
-            composite_score -= 0.9      # Strong SELL (overbought extreme)
-        elif rsi_val > 70: 
-            composite_score -= 0.5      # Mild SELL
-        elif rsi_val > 60: 
-            composite_score -= 0.2      # Weak SELL
-        else: 
-            composite_score += 0.1       # Neutral zone gets slight positive
-        
-        # MACD Logic (fixed)
-        if macd_hist_val > 0.5: 
-            composite_score += 0.7
-        elif macd_hist_val > 0.2: 
-            composite_score += 0.4
-        elif macd_hist_val > 0: 
-            composite_score += 0.2
-        elif macd_hist_val < -0.5: 
-            composite_score -= 0.7
-        elif macd_hist_val < -0.2: 
-            composite_score -= 0.4
-        elif macd_hist_val < 0: 
-            composite_score -= 0.2
-        
-        # Moving Averages
-        if sma50_val: 
-            composite_score += 0.4 if current_price > sma50_val else -0.35
-        if sma200_val: 
-            composite_score += 0.3 if current_price > sma200_val else -0.35
-        
-        # ML Signal
+        if rsi_val < 30: composite_score += 0.9
+        elif rsi_val < 40: composite_score += 0.4
+        elif rsi_val > 80: composite_score -= 0.9
+        elif rsi_val > 70: composite_score -= 0.5
+        elif rsi_val > 60: composite_score -= 0.2
+        else: composite_score += 0.1
+        if macd_hist_val > 0.5: composite_score += 0.7
+        elif macd_hist_val > 0.2: composite_score += 0.4
+        elif macd_hist_val > 0: composite_score += 0.2
+        elif macd_hist_val < -0.5: composite_score -= 0.7
+        elif macd_hist_val < -0.2: composite_score -= 0.4
+        elif macd_hist_val < 0: composite_score -= 0.2
+        if sma50_val: composite_score += 0.4 if current_price > sma50_val else -0.35
+        if sma200_val: composite_score += 0.3 if current_price > sma200_val else -0.35
         if forecast:
             ml_signal = (forecast['bull_probability'] - 0.5) * 2
-            composite_score += ml_signal * 1.0  # Reduced from 1.4
-        
-        # Sentiment
+            composite_score += ml_signal * 1.0
         composite_score += min(1.0, max(-1.0, avg_sentiment * 2.0))
-        
-        # Normalize final score
         final_score = min(1.0, max(-1.0, composite_score / 2.6))
-        
-        # Signal thresholds (fixed - higher thresholds for BUY/SELL)
-        if final_score >= 0.45: 
-            signal = 'STRONG BUY'
-        elif final_score >= 0.25: 
-            signal = 'BUY'
-        elif final_score <= -0.45: 
-            signal = 'STRONG SELL'
-        elif final_score <= -0.25: 
-            signal = 'SELL'
-        elif final_score >= 0.10: 
-            signal = 'ACCUMULATE'
-        elif final_score <= -0.10: 
-            signal = 'REDUCE'
-        else: 
-            signal = 'HOLD'
-        
-        # Confidence calculation (fixed)
+
+        if final_score >= 0.45: signal = 'STRONG BUY'
+        elif final_score >= 0.25: signal = 'BUY'
+        elif final_score <= -0.45: signal = 'STRONG SELL'
+        elif final_score <= -0.25: signal = 'SELL'
+        elif final_score >= 0.10: signal = 'ACCUMULATE'
+        elif final_score <= -0.10: signal = 'REDUCE'
+        else: signal = 'HOLD'
+
         confidence = min(94, max(55, 55 + abs(final_score) * 35))
         if forecast and forecast.get('val_accuracy', 0) > 0.5:
             confidence = min(94, max(55, (confidence + forecast['val_accuracy'] * 100) / 2))
         if abs(avg_sentiment) > 0.2:
             confidence = min(94, confidence + 5)
-        
         confidence = round(confidence, 1)
 
         target_price = forecast['target_price'] if forecast else current_price * (1 + final_score * 0.05)
@@ -337,9 +388,9 @@ def analyze(ticker):
 @app.route('/api/quote/<ticker>')
 def quote(ticker):
     ticker = ticker.upper().strip()
+    normalized = normalize_indian_symbol(ticker)
     try:
-        tk = yf.Ticker(ticker)
-        info = tk.fast_info
+        tk = yf.Ticker(normalized)
         hist = tk.history(period='2d')
         if hist.empty:
             return jsonify({'error': 'No data'}), 404
@@ -359,158 +410,108 @@ def quote(ticker):
 
 @app.route('/api/openclaw/<ticker>')
 def openclaw_analyze(ticker):
-    """
-    OpenClaw skill endpoint — returns a concise, agent-friendly payload.
-    Protected by ArmorIQ intent verification (simulated token in response).
-    """
     ticker = ticker.upper().strip()
-    # ArmorIQ: sanitise ticker to alphanumeric only (prompt-injection guard)
     if not ticker.isalpha() or len(ticker) > 6:
-        return jsonify({'error': 'Invalid ticker — ArmorIQ blocked: input did not pass sanitisation'}), 400
-
-    import secrets, datetime
-    intent_token = secrets.token_hex(16)          # ArmorIQ intent token (demo)
-    timestamp    = datetime.datetime.utcnow().isoformat() + 'Z'
-
+        return jsonify({'error': 'Invalid ticker — ArmorIQ blocked'}), 400
+    normalized = normalize_indian_symbol(ticker)
+    intent_token = secrets.token_hex(16)
+    timestamp = datetime.datetime.utcnow().isoformat() + 'Z'
     try:
-        df = fetch_ohlcv(ticker)
+        df = fetch_ohlcv(normalized)
         if df.empty:
             return jsonify({'error': f'No data for {ticker}'}), 404
-
         df_feat = build_features(df)
         closes = df_feat['Close'].values
         current_price = float(closes[-1])
-        rsi_val       = float(df_feat['rsi'].iloc[-1])
+        rsi_val = float(df_feat['rsi'].iloc[-1])
         macd_hist_val = float(df_feat['macd_hist'].iloc[-1])
-
         forecast = ml_forecast(df)
         articles = fetch_news_rss(ticker)
         enriched = analyze_sentiment_finbert(articles)
-
         sentiment_scores = [a['sentiment_score'] for a in enriched]
-        avg_sentiment    = float(np.mean(sentiment_scores)) if sentiment_scores else 0.0
+        avg_sentiment = float(np.mean(sentiment_scores)) if sentiment_scores else 0.0
         bull_news = sum(1 for a in enriched if a['sentiment_label'] == 'Bullish')
         total_news = len(enriched) or 1
         news_bull_pct = round(bull_news / total_news * 100)
 
-        # Composite signal (same logic as /api/analyze)
         composite_score = 0.0
-        
-        # RSI Logic
-        if rsi_val < 30: 
-            composite_score += 0.9
-        elif rsi_val < 40: 
-            composite_score += 0.4
-        elif rsi_val > 80: 
-            composite_score -= 0.9
-        elif rsi_val > 70: 
-            composite_score -= 0.5
-        elif rsi_val > 60: 
-            composite_score -= 0.2
-        else: 
-            composite_score += 0.1
-        
-        # MACD Logic
-        if macd_hist_val > 0.5: 
-            composite_score += 0.7
-        elif macd_hist_val > 0.2: 
-            composite_score += 0.4
-        elif macd_hist_val > 0: 
-            composite_score += 0.2
-        elif macd_hist_val < -0.5: 
-            composite_score -= 0.7
-        elif macd_hist_val < -0.2: 
-            composite_score -= 0.4
-        elif macd_hist_val < 0: 
-            composite_score -= 0.2
-        
-        # ML Signal
+        if rsi_val < 30: composite_score += 0.9
+        elif rsi_val < 40: composite_score += 0.4
+        elif rsi_val > 80: composite_score -= 0.9
+        elif rsi_val > 70: composite_score -= 0.5
+        elif rsi_val > 60: composite_score -= 0.2
+        else: composite_score += 0.1
+        if macd_hist_val > 0.5: composite_score += 0.7
+        elif macd_hist_val > 0.2: composite_score += 0.4
+        elif macd_hist_val > 0: composite_score += 0.2
+        elif macd_hist_val < -0.5: composite_score -= 0.7
+        elif macd_hist_val < -0.2: composite_score -= 0.4
+        elif macd_hist_val < 0: composite_score -= 0.2
         if forecast:
             composite_score += (forecast['bull_probability'] - 0.5) * 2 * 1.0
-        
-        # Sentiment
         composite_score += min(1.0, max(-1.0, avg_sentiment * 2.0))
-        
-        # Normalize
         final_score = min(1.0, max(-1.0, composite_score / 2.6))
-        
-        # Signal thresholds
-        if final_score >= 0.45: 
-            signal = 'STRONG BUY'
-        elif final_score >= 0.25: 
-            signal = 'BUY'
-        elif final_score <= -0.45: 
-            signal = 'STRONG SELL'
-        elif final_score <= -0.25: 
-            signal = 'SELL'
-        elif final_score >= 0.10: 
-            signal = 'ACCUMULATE'
-        elif final_score <= -0.10: 
-            signal = 'REDUCE'
-        else: 
-            signal = 'HOLD'
+
+        if final_score >= 0.45: signal = 'STRONG BUY'
+        elif final_score >= 0.25: signal = 'BUY'
+        elif final_score <= -0.45: signal = 'STRONG SELL'
+        elif final_score <= -0.25: signal = 'SELL'
+        elif final_score >= 0.10: signal = 'ACCUMULATE'
+        elif final_score <= -0.10: signal = 'REDUCE'
+        else: signal = 'HOLD'
 
         confidence = min(94, max(55, 55 + abs(final_score) * 35))
         if forecast and forecast.get('val_accuracy', 0) > 0.5:
             confidence = min(94, max(55, (confidence + forecast['val_accuracy'] * 100) / 2))
         if abs(avg_sentiment) > 0.2:
             confidence = min(94, confidence + 5)
-        
         confidence = round(confidence, 1)
-        
+
         target_price = forecast['target_price'] if forecast else current_price * (1 + final_score * 0.05)
-        pred_ret     = forecast['predicted_return_pct'] if forecast else final_score * 5
-        bull_prob    = round(forecast['bull_probability'] * 100, 1) if forecast else 50.0
-
-        top_headlines = [
-            {'title': a['title'], 'sentiment': a['sentiment_label'], 'confidence': round(a['confidence']*100)}
-            for a in enriched[:5]
-        ]
-
+        pred_ret = forecast['predicted_return_pct'] if forecast else final_score * 5
+        bull_prob = round(forecast['bull_probability'] * 100, 1) if forecast else 50.0
+        top_headlines = [{'title': a['title'], 'sentiment': a['sentiment_label'], 'confidence': round(a['confidence']*100)} for a in enriched[:5]]
         macd_sent = 'bullish' if macd_hist_val > 0 else 'bearish'
         news_sent = 'positive' if avg_sentiment > 0.05 else 'negative' if avg_sentiment < -0.05 else 'neutral'
-
-        summary = (
-            f"{ticker} is signalling {signal} with {round(confidence)}% confidence. "
-            f"Current price ${round(current_price,2)}, ML target ${round(target_price,2)} "
-            f"({'+' if pred_ret>=0 else ''}{round(pred_ret,2)}% projected). "
-            f"RSI {round(rsi_val,1)} — MACD {macd_sent} — News {news_sent} ({news_bull_pct}% bullish headlines). "
-            f"All tool calls verified by ArmorIQ intent token {intent_token[:8]}…"
-        )
-
+        summary = f"{ticker} is signalling {signal} with {confidence}% confidence. Current price ${current_price:.2f}, ML target ${target_price:.2f} ({'+' if pred_ret>=0 else ''}{pred_ret:.2f}% projected). RSI {rsi_val:.1f} — MACD {macd_sent} — News {news_sent} ({news_bull_pct}% bullish headlines)."
         return jsonify({
-            'ticker':             ticker,
-            'signal':             signal,
-            'confidence':         confidence,
-            'current_price':      round(current_price, 2),
-            'target_price':       round(target_price, 2),
+            'ticker': ticker,
+            'signal': signal,
+            'confidence': confidence,
+            'current_price': round(current_price, 2),
+            'target_price': round(target_price, 2),
             'predicted_return_pct': round(pred_ret, 2),
-            'bull_probability':   bull_prob,
-            'rsi':                round(rsi_val, 2),
-            'macd_sentiment':     macd_sent,
-            'news_sentiment':     news_sent,
-            'news_bull_pct':      news_bull_pct,
-            'top_headlines':      top_headlines,
-            'summary':            summary,
+            'bull_probability': bull_prob,
+            'rsi': round(rsi_val, 2),
+            'macd_sentiment': macd_sent,
+            'news_sentiment': news_sent,
+            'news_bull_pct': news_bull_pct,
+            'top_headlines': top_headlines,
+            'summary': summary,
             'armoriq': {
-                'verified':      True,
-                'intent_token':  intent_token,
-                'timestamp':     timestamp,
-                'policy':        'allow:web_fetch(localhost:5050)',
+                'verified': True,
+                'intent_token': intent_token,
+                'timestamp': timestamp,
+                'policy': 'allow:web_fetch(localhost:5050)',
                 'injection_check': 'passed'
             }
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/api/health')
+@app.route('/api/health/<ticker>')
 def health():
     return jsonify({'status': 'ok', 'finbert': 'loaded' if _sentiment_pipe else 'lazy'})
 
 if __name__ == '__main__':
-    print("Starting StockSense backend on port 5050...")
+    print("=" * 50)
+    print("🚀 StockSense Backend Starting...")
+    print("📍 Server: http://localhost:5050")
+    print("🇮🇳 Indian stocks supported: SBIN, RELIANCE, TCS, INFY, etc.")
+    print("🦞 OpenClaw endpoint: /api/openclaw/{TICKER}")
+    print("🛡️ ArmorIQ security: ENABLED")
+    print("=" * 50)
     print("Pre-loading FinBERT model...")
     get_sentiment_pipe()
-    print("FinBERT ready.")
+    print("✅ FinBERT ready!")
     app.run(host='0.0.0.0', port=5050, debug=False)
