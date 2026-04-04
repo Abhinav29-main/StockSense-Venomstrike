@@ -1,0 +1,5 @@
+{
+  "max_trade_amount_usd": 500.0,
+  "restricted_tickers": ["GME", "AMC"],
+  "min_ml_confidence_percent": 45.0
+}
